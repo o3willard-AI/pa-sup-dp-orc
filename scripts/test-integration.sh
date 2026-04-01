@@ -10,6 +10,7 @@ go test ./internal/llm/... ./internal/config/... ./internal/session/... ./intern
 
 echo "Creating test configuration..."
 mkdir -p ~/.pairadmin
+echo "Overwriting ~/.pairadmin/config.yaml with default config (test only)"
 cp config.yaml ~/.pairadmin/config.yaml
 
 echo "Starting session store test..."

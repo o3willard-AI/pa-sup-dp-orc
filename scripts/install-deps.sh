@@ -29,6 +29,10 @@ echo ""
 # Install Wails CLI
 echo "Installing Wails CLI..."
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
+if ! command -v wails &> /dev/null; then
+    echo "ERROR: Wails CLI installation failed"
+    exit 1
+fi
 echo "  ✓ Wails CLI installed"
 echo ""
 
@@ -40,6 +44,10 @@ echo ""
 
 # Install frontend dependencies
 echo "Installing frontend dependencies..."
+if [ ! -d "frontend" ]; then
+    echo "ERROR: frontend directory missing"
+    exit 1
+fi
 cd frontend
 npm install
 echo "  ✓ Frontend dependencies installed"
