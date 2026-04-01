@@ -1,0 +1,29 @@
+# PairAdmin Configuration
+llm:
+  provider: "openai"  # openai, anthropic, ollama
+  openai:
+    api_key: ""
+    model: "gpt-4"
+    base_url: "https://api.openai.com/v1"
+  anthropic:
+    api_key: ""
+    model: "claude-3-haiku-20240307"
+    base_url: "https://api.anthropic.com"
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "llama3"
+
+security:
+  filter_patterns:
+    - name: "password"
+      pattern: "(?i)password\\s*[:=]\\s*['\\\"]?[^'\\\"\\s]+"
+    - name: "api_key"
+      pattern: "(?i)(api[_-]?key|token)[\\s:=]+['\\\"]?[a-zA-Z0-9_\\-]{20,}['\\\"]?"
+    - name: "aws_access_key"
+      pattern: "AKIA[0-9A-Z]{16}"
+
+ui:
+  theme: "system"  # system, light, dark
+  hotkeys:
+    copy_last_command: "Ctrl+Shift+C"
+    focus_app: "Ctrl+Shift+P"

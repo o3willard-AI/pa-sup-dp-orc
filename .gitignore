@@ -1,0 +1,48 @@
+# Wails defaults
+/build/bin/
+frontend/node_modules/
+frontend/dist
+
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.bin
+
+# Go workspace
+go.work
+go.work.sum
+
+# Vendor directory
+vendor/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage.out
+coverage.html
+coverage/
+
+# User configuration
+~/.pairadmin/
