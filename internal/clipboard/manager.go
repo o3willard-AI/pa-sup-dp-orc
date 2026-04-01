@@ -14,12 +14,12 @@ type Manager struct {
 
 // NewManager creates a new clipboard manager.
 func NewManager() *Manager {
-	m := &Manager{}
-	m.initErr = clipboard.Init()
-	return m
+	err := clipboard.Init()
+	return &Manager{initErr: err}
 }
 
 // CopyToTerminal copies text to clipboard and optionally focuses the target terminal.
+// terminalID is currently unused; reserved for future terminal‑focus logic.
 func (m *Manager) CopyToTerminal(ctx context.Context, text string, terminalID string) error {
 	if m.initErr != nil {
 		return fmt.Errorf("clipboard init failed: %w", m.initErr)
