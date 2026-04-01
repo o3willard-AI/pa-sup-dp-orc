@@ -1,11 +1,19 @@
+// Package security provides text‑filtering utilities for sensitive data.
 package security
 
 import (
 	"fmt"
 	"regexp"
+	"sync"
+)
+
+var (
+	defaultFilter     *Filter
+	defaultFilterOnce sync.Once
 )
 
 // Filter redacts sensitive patterns from text.
+// Create a Filter with NewFilter; zero value has empty replace string.
 type Filter struct {
 	patterns []*regexp.Regexp
 	replace  string
@@ -47,18 +55,20 @@ func (f *Filter) ContainsSensitive(text string) bool {
 
 // DefaultFilter returns a filter with common sensitive patterns.
 func DefaultFilter() *Filter {
-	patterns := []string{
-		`(?i)password\s*[:=]\s*['\"]?[^'\"]+`,
-		`(?i)(api[_-]?key|token)[\s:=]+['\"]?[a-zA-Z0-9_\-]{20,}['\"]?`,
-		`AKIA[0-9A-Z]{16}`,
-		`-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----`,
-		`(?i)secret[\s:=]+['\"]?[a-zA-Z0-9_\-]{10,}['\"]?`,
-	}
-	// Ignore compilation errors for known‑good patterns
-	f, err := NewFilter(patterns)
-	if err != nil {
-		// Should never happen for the hardcoded patterns; fallback to empty filter
-		f = &Filter{replace: "[REDACTED]"}
-	}
-	return f
+	defaultFilterOnce.Do(func() {
+		patterns := []string{
+			`(?i)password\s*[:=]\s*['\"]?[^'\"]+`,
+			`(?i)(api[_-]?key|token)[\s:=]+['\"]?[a-zA-Z0-9_\-]{20,}['\"]?`,
+			`AKIA[0-9A-Z]{16}`,
+			`-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----`,
+			`(?i)secret[\s:=]+['\"]?[a-zA-Z0-9_\-]{10,}['\"]?`,
+		}
+		// These patterns are known to compile; panic if they don't.
+		f, err := NewFilter(patterns)
+		if err != nil {
+			panic(fmt.Sprintf("security: default pattern compilation failed: %v", err))
+		}
+		defaultFilter = f
+	})
+	return defaultFilter
 }
