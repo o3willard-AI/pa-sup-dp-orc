@@ -1,46 +1,81 @@
 <script>
   import { settingsOpen } from '../lib/stores.js';
+  import { tick } from 'svelte';
   import LLMTab from './settings/LLMTab.svelte';
+  import TerminalsTab from './settings/TerminalsTab.svelte';
+  import HotkeysTab from './settings/HotkeysTab.svelte';
+  import AppearanceTab from './settings/AppearanceTab.svelte';
 
   let activeTab = 'llm';
+  const tabOrder = ['llm', 'terminals', 'hotkeys', 'appearance'];
 
   function close() {
     settingsOpen.set(false);
   }
+
+  function handleKeydown(event) {
+    if (event.key === 'Escape') {
+      close();
+    }
+  }
+
+  async function handleTabKeydown(event) {
+    const currentIndex = tabOrder.indexOf(activeTab);
+    let newIndex = currentIndex;
+    
+    if (event.key === 'ArrowLeft') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : tabOrder.length - 1;
+    } else if (event.key === 'ArrowRight') {
+      newIndex = currentIndex < tabOrder.length - 1 ? currentIndex + 1 : 0;
+    } else if (event.key === 'Home') {
+      newIndex = 0;
+    } else if (event.key === 'End') {
+      newIndex = tabOrder.length - 1;
+    } else {
+      return;
+    }
+    
+    event.preventDefault();
+    activeTab = tabOrder[newIndex];
+    await tick();
+    document.getElementById(`tab-${activeTab}`)?.focus();
+  }
+
+  function handleOverlayKeydown(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      close();
+    }
+  }
+
+  function noop() {}
 </script>
 
-<div class="settings-modal" on:click={close}>
-  <div class="settings-content" on:click|stopPropagation>
+<svelte:window on:keydown={handleKeydown} />
+
+<div class="settings-modal" on:click={close} role="button" tabindex="0" aria-label="Close settings" on:keydown={handleOverlayKeydown}>
+   <div class="settings-content" on:click|stopPropagation role="dialog" aria-modal="true" aria-labelledby="settings-title" on:keydown={noop}>
     <div class="header">
-      <h2>Settings</h2>
+       <h2 id="settings-title">Settings</h2>
       <button class="close-btn" on:click={close}>×</button>
     </div>
 
-    <div class="tabs">
-      <button class:active={activeTab === 'llm'} on:click={() => activeTab = 'llm'}>LLM</button>
-      <button class:active={activeTab === 'terminals'} on:click={() => activeTab = 'terminals'}>Terminals</button>
-      <button class:active={activeTab === 'hotkeys'} on:click={() => activeTab = 'hotkeys'}>Hotkeys</button>
-      <button class:active={activeTab === 'appearance'} on:click={() => activeTab = 'appearance'}>Appearance</button>
+     <div class="tabs" role="tablist">
+        <button id="tab-llm" role="tab" aria-selected={activeTab === 'llm'} aria-controls="settings-tabpanel" class:active={activeTab === 'llm'} on:click={() => activeTab = 'llm'} on:keydown={handleTabKeydown}>LLM</button>
+        <button id="tab-terminals" role="tab" aria-selected={activeTab === 'terminals'} aria-controls="settings-tabpanel" class:active={activeTab === 'terminals'} on:click={() => activeTab = 'terminals'} on:keydown={handleTabKeydown}>Terminals</button>
+        <button id="tab-hotkeys" role="tab" aria-selected={activeTab === 'hotkeys'} aria-controls="settings-tabpanel" class:active={activeTab === 'hotkeys'} on:click={() => activeTab = 'hotkeys'} on:keydown={handleTabKeydown}>Hotkeys</button>
+        <button id="tab-appearance" role="tab" aria-selected={activeTab === 'appearance'} aria-controls="settings-tabpanel" class:active={activeTab === 'appearance'} on:click={() => activeTab = 'appearance'} on:keydown={handleTabKeydown}>Appearance</button>
     </div>
 
-    <div class="tab-content">
+     <div id="settings-tabpanel" class="tab-content" role="tabpanel" aria-labelledby="tab-{activeTab}">
       {#if activeTab === 'llm'}
         <LLMTab />
       {:else if activeTab === 'terminals'}
-        <div class="tab">
-          <h3>Terminal Settings</h3>
-          <p>Configure terminal detection and capture settings.</p>
-        </div>
+        <TerminalsTab />
       {:else if activeTab === 'hotkeys'}
-        <div class="tab">
-          <h3>Hotkey Configuration</h3>
-          <p>Configure global hotkeys for PairAdmin.</p>
-        </div>
+        <HotkeysTab />
       {:else if activeTab === 'appearance'}
-        <div class="tab">
-          <h3>Appearance</h3>
-          <p>Choose light/dark theme and UI preferences.</p>
-        </div>
+        <AppearanceTab />
       {/if}
     </div>
   </div>

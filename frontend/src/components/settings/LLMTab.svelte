@@ -6,7 +6,6 @@
   let model = 'gpt-4';
 
   function save() {
-    console.log('Save LLM settings', { provider, openaiKey, anthropicKey, ollamaUrl, model });
     alert('Settings saved (placeholder)');
   }
 </script>
@@ -14,8 +13,8 @@
 <div class="tab">
   <h3>LLM Configuration</h3>
   <div class="field">
-    <label>Provider</label>
-    <select bind:value={provider}>
+    <label for="llm-provider-select">Provider</label>
+    <select id="llm-provider-select" bind:value={provider}>
       <option value="openai">OpenAI</option>
       <option value="anthropic">Anthropic</option>
       <option value="ollama">Ollama (local)</option>
@@ -24,22 +23,22 @@
 
   {#if provider === 'openai'}
     <div class="field">
-      <label>OpenAI API Key</label>
-      <input type="password" bind:value={openaiKey} placeholder="sk-..." />
+      <label for="openai-api-key">OpenAI API Key</label>
+      <input id="openai-api-key" type="password" bind:value={openaiKey} placeholder="sk-..." />
     </div>
     <div class="field">
-      <label>Model</label>
-      <input bind:value={model} placeholder="gpt-4" />
+      <label for="model-input">Model</label>
+      <input id="model-input" bind:value={model} placeholder="gpt-4" />
     </div>
   {:else if provider === 'anthropic'}
     <div class="field">
-      <label>Anthropic API Key</label>
-      <input type="password" bind:value={anthropicKey} placeholder="sk-ant-..." />
+      <label for="anthropic-api-key">Anthropic API Key</label>
+      <input id="anthropic-api-key" type="password" bind:value={anthropicKey} placeholder="sk-ant-..." />
     </div>
   {:else if provider === 'ollama'}
     <div class="field">
-      <label>Ollama Base URL</label>
-      <input bind:value={ollamaUrl} />
+      <label for="ollama-base-url">Ollama Base URL</label>
+      <input id="ollama-base-url" bind:value={ollamaUrl} />
     </div>
   {/if}
 
