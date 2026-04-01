@@ -1,12 +1,13 @@
 <script>
   import { messages, activeTerminalId, commandHistory } from '../lib/stores.js';
-  import { SendMessage, CopyCommandToClipboard, GetCommandsByTerminal } from '../../wailsjs/go/main/App.js';
+  import { SendMessage, CopyCommandToClipboard } from '../../wailsjs/go/main/App.js';
+  import { fetchCommands } from '../lib/commands.js';
 
   let inputText = '';
   let isLoading = false;
 
   function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return crypto.randomUUID();
   }
 
   async function handleSend() {
@@ -59,15 +60,7 @@
     }
   }
   
-  async function fetchCommands(terminalId) {
-    if (!terminalId) return;
-    try {
-      const commands = await GetCommandsByTerminal(terminalId);
-      commandHistory.set(commands);
-    } catch (error) {
-      console.error('Failed to fetch commands:', error);
-    }
-  }
+
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {

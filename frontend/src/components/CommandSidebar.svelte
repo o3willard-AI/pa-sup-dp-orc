@@ -1,6 +1,21 @@
 <script>
   import { commandHistory, activeTerminalId } from '../lib/stores.js';
-  import { CopyCommandToClipboard, GetCommandsByTerminal } from '../../wailsjs/go/main/App.js';
+  import { CopyCommandToClipboard } from '../../wailsjs/go/main/App.js';
+  import { fetchCommands } from '../lib/commands.js';
+
+  let loadingCommands = false;
+
+  async function loadCommands(terminalId) {
+    if (!terminalId) return;
+    loadingCommands = true;
+    try {
+      await fetchCommands(terminalId);
+    } catch (error) {
+      console.error('Failed to fetch commands:', error);
+    } finally {
+      loadingCommands = false;
+    }
+  }
 
   async function copyCommand(command) {
     try {
@@ -12,23 +27,17 @@
     }
   }
   
-  async function fetchCommands(terminalId) {
-    if (!terminalId) return;
-    try {
-      const commands = await GetCommandsByTerminal(terminalId);
-      commandHistory.set(commands);
-    } catch (error) {
-      console.error('Failed to fetch commands:', error);
-    }
-  }
+
   
   // Fetch commands when active terminal changes
-  $: if ($activeTerminalId) fetchCommands($activeTerminalId);
+  $: if ($activeTerminalId) loadCommands($activeTerminalId);
 </script>
 
 <div class="command-sidebar">
   <h3>Command History</h3>
-  {#if $commandHistory.length === 0}
+  {#if loadingCommands}
+    <p class="loading">Loading commands...</p>
+  {:else if $commandHistory.length === 0}
     <p class="empty">No commands yet. Ask the AI for help!</p>
   {:else}
     <div class="command-list">
@@ -60,6 +69,10 @@
   }
   .empty {
     color: #999;
+    font-style: italic;
+  }
+  .loading {
+    color: #666;
     font-style: italic;
   }
   .command-list {
