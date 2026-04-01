@@ -41,20 +41,15 @@
     document.getElementById(`tab-${activeTab}`)?.focus();
   }
 
-  function handleOverlayKeydown(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      close();
-    }
-  }
 
-  function noop() {}
+
+
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
-<div class="settings-modal" on:click={close} role="button" tabindex="0" aria-label="Close settings" on:keydown={handleOverlayKeydown}>
-   <div class="settings-content" on:click|stopPropagation role="dialog" aria-modal="true" aria-labelledby="settings-title" on:keydown={noop}>
+  <div class="settings-modal" on:click={close} role="presentation" on:keydown={() => {}}>
+   <div class="settings-content" on:click|stopPropagation role="dialog" aria-modal="true" aria-labelledby="settings-title" on:keydown={() => {}}>
     <div class="header">
        <h2 id="settings-title">Settings</h2>
        <button class="close-btn" on:click={close} aria-label="Close">×</button>
@@ -67,7 +62,7 @@
         <button id="tab-appearance" role="tab" aria-selected={activeTab === 'appearance'} aria-controls="settings-tabpanel" class:active={activeTab === 'appearance'} on:click={() => activeTab = 'appearance'} on:keydown={handleTabKeydown}>Appearance</button>
     </div>
 
-     <div id="settings-tabpanel" class="tab-content" role="tabpanel" aria-labelledby="tab-{activeTab}">
+      <div id="settings-tabpanel" class="tab-content" role="tabpanel" aria-labelledby={"tab-" + activeTab}>
       {#if activeTab === 'llm'}
         <LLMTab />
       {:else if activeTab === 'terminals'}
