@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -186,15 +187,76 @@ func TestConfigEmptyConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Should fail because openai provider requires api_key
+	// Should fail because openai provider requires api_key (config: llm.openai.api_key, env: PAIRADMIN_LLM_OPENAI_API_KEY)
 	err := Init(configFile)
 	if err == nil {
 		cfg := Get()
 		t.Errorf("Expected validation error for empty config, got nil. Config: provider=%s, openai.api_key='%s'", cfg.LLM.Provider, cfg.LLM.OpenAI.APIKey)
 	} else {
 		t.Logf("Got error: %v", err)
-		if err.Error() != "openai provider requires api_key" {
+		if err.Error() != "openai provider requires api_key (config: llm.openai.api_key, env: PAIRADMIN_LLM_OPENAI_API_KEY)" {
 			t.Errorf("Unexpected error message: %v", err)
 		}
 	}
+}
+func TestConcurrentAccess(t *testing.T) {
+	resetViper(t)
+	t.Setenv("PAIRADMIN_LLM_OPENAI_API_KEY", "sk-test-concurrent")
+	t.Setenv("PAIRADMIN_LLM_ANTHROPIC_API_KEY", "sk-test-concurrent")
+
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.yaml")
+
+	configContent := `
+llm:
+  provider: openai
+  openai:
+    api_key: sk-test-concurrent
+  anthropic:
+    api_key: sk-test-concurrent
+`
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := Init(configFile)
+	if err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+
+	const readers = 10
+	const writers = 2
+	const iterations = 100
+
+	var wg sync.WaitGroup
+	wg.Add(readers + writers)
+
+	// Reader goroutines
+	for i := 0; i < readers; i++ {
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				cfg := Get()
+				if cfg == nil {
+					t.Errorf("Reader %d iteration %d: Get returned nil", id, j)
+					return
+				}
+				_ = cfg.LLM.Provider
+			}
+		}(i)
+	}
+
+	// Writer goroutines
+	for i := 0; i < writers; i++ {
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				if err := Save(); err != nil {
+					t.Errorf("Writer %d iteration %d: Save failed: %v", id, j, err)
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
 }

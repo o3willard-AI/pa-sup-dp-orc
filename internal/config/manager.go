@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
@@ -50,15 +51,25 @@ func (c *Config) validate() error {
 	switch c.LLM.Provider {
 	case "openai":
 		if c.LLM.OpenAI.APIKey == "" {
-			return errors.New("openai provider requires api_key")
+			return errors.New("openai provider requires api_key (config: llm.openai.api_key, env: PAIRADMIN_LLM_OPENAI_API_KEY)")
 		}
 	case "anthropic":
 		if c.LLM.Anthropic.APIKey == "" {
-			return errors.New("anthropic provider requires api_key")
+			return errors.New("anthropic provider requires api_key (config: llm.anthropic.api_key, env: PAIRADMIN_LLM_ANTHROPIC_API_KEY)")
 		}
 	case "ollama":
 		if c.LLM.Ollama.BaseURL == "" {
-			return errors.New("ollama provider requires base_url")
+			return errors.New("ollama provider requires base_url (config: llm.ollama.base_url, env: PAIRADMIN_LLM_OLLAMA_BASE_URL)")
+		}
+		u, err := url.Parse(c.LLM.Ollama.BaseURL)
+		if err != nil {
+			return errors.New("ollama base_url is not a valid URL: " + err.Error())
+		}
+		if u.Scheme != "http" && u.Scheme != "https" {
+			return errors.New("ollama base_url must have http or https scheme")
+		}
+		if u.Host == "" {
+			return errors.New("ollama base_url must contain a host")
 		}
 	default:
 		return errors.New("unknown provider")
@@ -127,7 +138,7 @@ func Init(configFile string) error {
 	return nil
 }
 
-// Get returns the global configuration.
+// Get returns the global configuration. The returned Config pointer is shared and must not be modified concurrently by callers.
 func Get() *Config {
 	configMu.RLock()
 	defer configMu.RUnlock()
@@ -136,8 +147,8 @@ func Get() *Config {
 
 // Save writes the current configuration to disk.
 func Save() error {
-	configMu.RLock()
-	defer configMu.RUnlock()
+	configMu.Lock()
+	defer configMu.Unlock()
 
 	if globalConfig == nil {
 		return errors.New("config not initialized")
