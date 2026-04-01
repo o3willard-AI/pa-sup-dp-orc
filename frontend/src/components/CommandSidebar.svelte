@@ -4,16 +4,21 @@
   import { fetchCommands } from '../lib/commands.js';
 
   let loadingCommands = false;
+  let currentRequestId = 0;
 
   async function loadCommands(terminalId) {
     if (!terminalId) return;
+    const requestId = ++currentRequestId;
     loadingCommands = true;
     try {
       await fetchCommands(terminalId);
     } catch (error) {
       console.error('Failed to fetch commands:', error);
     } finally {
-      loadingCommands = false;
+      // Only update loading state if this request is still the latest
+      if (requestId === currentRequestId) {
+        loadingCommands = false;
+      }
     }
   }
 
