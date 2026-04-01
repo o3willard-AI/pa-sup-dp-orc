@@ -34,6 +34,20 @@ type clipboardManager interface {
 	CopyToTerminal(ctx context.Context, text string, terminalID string) error
 }
 
+type stubProvider struct {
+	name string
+}
+
+func (s *stubProvider) Name() string { return s.name }
+
+func (s *stubProvider) Complete(ctx context.Context, req llm.CompletionRequest) (*llm.CompletionResponse, error) {
+	return nil, fmt.Errorf("%s provider not yet implemented", s.name)
+}
+
+func (s *stubProvider) StreamComplete(ctx context.Context, req llm.CompletionRequest) (<-chan string, error) {
+	return nil, fmt.Errorf("%s provider not yet implemented", s.name)
+}
+
 func createFilterFromConfig(ctx context.Context, cfg *config.Config) *security.Filter {
 	if cfg == nil || len(cfg.Security.FilterPatterns) == 0 {
 		return security.DefaultFilter()
@@ -79,10 +93,12 @@ func NewChatHandlers(ctx context.Context, store *session.Store) (*ChatHandlers, 
 		)
 	case "anthropic":
 		// TODO: implement Anthropic provider
-		return nil, fmt.Errorf("anthropic provider not yet implemented")
+		runtime.LogWarning(ctx, fmt.Sprintf("Provider %q not yet implemented, using stub provider", cfg.LLM.Provider))
+		gateway = &stubProvider{name: cfg.LLM.Provider}
 	case "ollama":
 		// TODO: implement Ollama provider
-		return nil, fmt.Errorf("ollama provider not yet implemented")
+		runtime.LogWarning(ctx, fmt.Sprintf("Provider %q not yet implemented, using stub provider", cfg.LLM.Provider))
+		gateway = &stubProvider{name: cfg.LLM.Provider}
 	default:
 		return nil, fmt.Errorf("unknown provider %q", cfg.LLM.Provider)
 	}

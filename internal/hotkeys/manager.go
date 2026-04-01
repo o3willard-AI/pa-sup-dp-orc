@@ -3,6 +3,7 @@ package hotkeys
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	_ "github.com/go-vgo/robotgo"
 	"golang.org/x/text/cases"
@@ -11,6 +12,7 @@ import (
 
 // Manager handles global hotkey registration.
 type Manager struct {
+	mu         sync.RWMutex
 	registered map[string]func()
 }
 
@@ -29,6 +31,8 @@ func (m *Manager) Register(hotkey string, callback func()) error {
 		return err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	// robotgo.AddHotkey expects modifiers as separate arguments
 	// For simplicity, we'll use robotgo.EventHook for now (alternative approach)
 	// This is a placeholder implementation; real registration requires platform‑specific hooks
