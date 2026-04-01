@@ -57,7 +57,7 @@
    <div class="settings-content" on:click|stopPropagation role="dialog" aria-modal="true" aria-labelledby="settings-title" on:keydown={noop}>
     <div class="header">
        <h2 id="settings-title">Settings</h2>
-      <button class="close-btn" on:click={close}>×</button>
+       <button class="close-btn" on:click={close} aria-label="Close">×</button>
     </div>
 
      <div class="tabs" role="tablist">
