@@ -44,6 +44,7 @@ type mockStore struct {
 	getSessionFunc         func(sessionID string) (*session.Session, error)
 	addCommandFunc         func(cmd session.SuggestedCommand) error
 	getCommandByIDFunc     func(commandID string) (*session.SuggestedCommand, error)
+	getCommandsByTerminalFunc func(terminalID string) ([]session.SuggestedCommand, error)
 	incrementUsedCountFunc func(commandID string) error
 }
 
@@ -68,6 +69,12 @@ func (m *mockStore) AddCommand(cmd session.SuggestedCommand) error {
 func (m *mockStore) GetCommandByID(commandID string) (*session.SuggestedCommand, error) {
 	if m.getCommandByIDFunc != nil {
 		return m.getCommandByIDFunc(commandID)
+	}
+	return nil, nil
+}
+func (m *mockStore) GetCommandsByTerminal(terminalID string) ([]session.SuggestedCommand, error) {
+	if m.getCommandsByTerminalFunc != nil {
+		return m.getCommandsByTerminalFunc(terminalID)
 	}
 	return nil, nil
 }
@@ -160,12 +167,15 @@ func TestChatHandlers_SendMessage_CommandStored(t *testing.T) {
 
 	terminalID := "term-1"
 	message := "list files"
-	resp, err := handlers.SendMessage(terminalID, message)
+	resp, cmdID, err := handlers.SendMessage(terminalID, message)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
 	if resp != "$ ls -la" {
 		t.Errorf("expected response '$ ls -la', got %q", resp)
+	}
+	if cmdID == "" {
+		t.Error("expected non-empty command ID when command stored")
 	}
 	if capturedCmd.Command != "$ ls -la" {
 		t.Errorf("stored command mismatch: got %q", capturedCmd.Command)
@@ -331,7 +341,7 @@ security:
 	rf := reflect.NewAt(gatewayField.Type(), ptr).Elem()
 	rf.Set(reflect.ValueOf(mockGW))
 	// Call SendMessage with a secret pattern
-	_, err = handlers.SendMessage("term-1", "hello SECRET_KEY world")
+	_, _, err = handlers.SendMessage("term-1", "hello SECRET_KEY world")
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}

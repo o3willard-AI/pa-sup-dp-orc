@@ -6,6 +6,10 @@ export function CopyCommandToClipboard(arg1, arg2) {
   return window['go']['main']['App']['CopyCommandToClipboard'](arg1, arg2);
 }
 
+export function GetCommandsByTerminal(arg1) {
+  return window['go']['main']['App']['GetCommandsByTerminal'](arg1);
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }

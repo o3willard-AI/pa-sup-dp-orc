@@ -1,6 +1,6 @@
 <script>
   import { commandHistory, activeTerminalId } from '../lib/stores.js';
-  import { CopyCommandToClipboard } from '../../wailsjs/go/main/App.js';
+  import { CopyCommandToClipboard, GetCommandsByTerminal } from '../../wailsjs/go/main/App.js';
 
   async function copyCommand(command) {
     try {
@@ -11,6 +11,19 @@
       alert('Error copying command: ' + error.message);
     }
   }
+  
+  async function fetchCommands(terminalId) {
+    if (!terminalId) return;
+    try {
+      const commands = await GetCommandsByTerminal(terminalId);
+      commandHistory.set(commands);
+    } catch (error) {
+      console.error('Failed to fetch commands:', error);
+    }
+  }
+  
+  // Fetch commands when active terminal changes
+  $: if ($activeTerminalId) fetchCommands($activeTerminalId);
 </script>
 
 <div class="command-sidebar">

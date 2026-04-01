@@ -1,9 +1,13 @@
 <script>
-  import { messages, activeTerminalId } from '../lib/stores.js';
-  import { SendMessage } from '../../wailsjs/go/main/App.js';
+  import { messages, activeTerminalId, commandHistory } from '../lib/stores.js';
+  import { SendMessage, CopyCommandToClipboard, GetCommandsByTerminal } from '../../wailsjs/go/main/App.js';
 
   let inputText = '';
   let isLoading = false;
+
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
 
   async function handleSend() {
     if (!inputText.trim() || isLoading) return;
@@ -18,16 +22,50 @@
     isLoading = true;
 
     // Add user message to UI
-    messages.update(msgs => [...msgs, { role: 'user', content: userMessage }]);
+    messages.update(msgs => [...msgs, { id: generateId(), role: 'user', content: userMessage }]);
 
     try {
       const response = await SendMessage(terminalId, userMessage);
-      messages.update(msgs => [...msgs, { role: 'assistant', content: response }]);
+      // response is now an object with content and commandID fields
+      messages.update(msgs => [...msgs, { 
+        id: generateId(),
+        role: 'assistant', 
+        content: response.content,
+        commandID: response.commandID 
+      }]);
+      
+      // Refresh command history for this terminal
+      await fetchCommands(terminalId);
     } catch (error) {
       console.error('Failed to send message:', error);
       alert('Error: ' + error.message);
     } finally {
       isLoading = false;
+    }
+  }
+  
+  async function copyCommand(commandID) {
+    const terminalId = $activeTerminalId;
+    if (!terminalId) {
+      alert('Please select a terminal first');
+      return;
+    }
+    try {
+      await CopyCommandToClipboard(commandID, terminalId);
+      alert('Command copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy command:', error);
+      alert('Error copying command: ' + error.message);
+    }
+  }
+  
+  async function fetchCommands(terminalId) {
+    if (!terminalId) return;
+    try {
+      const commands = await GetCommandsByTerminal(terminalId);
+      commandHistory.set(commands);
+    } catch (error) {
+      console.error('Failed to fetch commands:', error);
     }
   }
 
@@ -47,9 +85,11 @@
         <div class="content">
           {#if msg.role === 'assistant' && msg.content.startsWith('$')}
             <pre><code>{msg.content}</code></pre>
-            <button on:click={() => console.log('Copy command:', msg.content)}>
-              Copy to Terminal
-            </button>
+            {#if msg.commandID}
+              <button on:click={() => copyCommand(msg.commandID)}>
+                Copy to Terminal
+              </button>
+            {/if}
           {:else}
             {msg.content}
           {/if}

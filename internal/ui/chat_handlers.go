@@ -26,6 +26,7 @@ type store interface {
 	GetSession(sessionID string) (*session.Session, error)
 	AddCommand(cmd session.SuggestedCommand) error
 	GetCommandByID(commandID string) (*session.SuggestedCommand, error)
+	GetCommandsByTerminal(terminalID string) ([]session.SuggestedCommand, error)
 	IncrementUsedCount(commandID string) error
 }
 
@@ -98,7 +99,7 @@ func NewChatHandlers(ctx context.Context, store *session.Store) (*ChatHandlers, 
 }
 
 // SendMessage sends a user message to the LLM and returns the response.
-func (c *ChatHandlers) SendMessage(terminalID, message string) (string, error) {
+func (c *ChatHandlers) SendMessage(terminalID, message string) (string, string, error) {
 	// Filter sensitive data from message
 	filteredMsg := c.filter.Redact(message)
 
@@ -113,12 +114,13 @@ func (c *ChatHandlers) SendMessage(terminalID, message string) (string, error) {
 
 	resp, err := c.gateway.Complete(c.ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("LLM completion: %w", err)
+		return "", "", fmt.Errorf("LLM completion: %w", err)
 	}
 
 	// Store suggested command if response looks like a command
 	// (simplistic heuristic: starts with $ or >)
 	cmdText := resp.Content
+	commandID := ""
 	if len(cmdText) > 0 && (cmdText[0] == '$' || cmdText[0] == '>') {
 		// Ensure a session exists for this terminal (session ID = terminalID)
 		_, sessionErr := c.store.GetSession(terminalID)
@@ -144,10 +146,12 @@ func (c *ChatHandlers) SendMessage(terminalID, message string) (string, error) {
 		if err := c.store.AddCommand(cmd); err != nil {
 			// Log but don't fail
 			runtime.LogError(c.ctx, fmt.Sprintf("failed to store command: %v", err))
+		} else {
+			commandID = cmd.ID
 		}
 	}
 
-	return resp.Content, nil
+	return resp.Content, commandID, nil
 }
 
 // CopyCommandToClipboard copies a command to clipboard and increments usage.

@@ -12,6 +12,12 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// SendMessageResponse is the response from SendMessage.
+type SendMessageResponse struct {
+	Content   string `json:"content"`
+	CommandID string `json:"commandID"`
+}
+
 // App struct
 type App struct {
 	ctx              context.Context
@@ -71,11 +77,23 @@ func (a *App) Greet(name string) string {
 }
 
 // SendMessage delegates to chat handlers.
-func (a *App) SendMessage(terminalID, message string) (string, error) {
+func (a *App) SendMessage(terminalID, message string) (SendMessageResponse, error) {
 	if a.chatHandlers == nil {
-		return "", fmt.Errorf("chat handlers not initialized")
+		return SendMessageResponse{}, fmt.Errorf("chat handlers not initialized")
 	}
-	return a.chatHandlers.SendMessage(terminalID, message)
+	content, commandID, err := a.chatHandlers.SendMessage(terminalID, message)
+	if err != nil {
+		return SendMessageResponse{}, err
+	}
+	return SendMessageResponse{Content: content, CommandID: commandID}, nil
+}
+
+// GetCommandsByTerminal returns all commands for a terminal.
+func (a *App) GetCommandsByTerminal(terminalID string) ([]session.SuggestedCommand, error) {
+	if a.sessionStore == nil {
+		return nil, fmt.Errorf("session store not initialized")
+	}
+	return a.sessionStore.GetCommandsByTerminal(terminalID)
 }
 
 // CopyCommandToClipboard delegates to chat handlers.
