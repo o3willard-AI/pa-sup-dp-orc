@@ -36,6 +36,7 @@
   
   // Fetch commands when active terminal changes
   $: if ($activeTerminalId) loadCommands($activeTerminalId);
+  $: if (!$activeTerminalId) commandHistory.set([]);
 </script>
 
 <div class="command-sidebar">
