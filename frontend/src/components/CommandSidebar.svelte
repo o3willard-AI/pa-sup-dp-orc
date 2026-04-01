@@ -5,6 +5,11 @@
 
   let loadingCommands = false;
   let currentRequestId = 0;
+  let error = '';
+
+  function clearError() {
+    error = '';
+  }
 
   async function loadCommands(terminalId) {
     if (!terminalId) return;
@@ -12,8 +17,10 @@
     loadingCommands = true;
     try {
       await fetchCommands(terminalId);
-    } catch (error) {
-      console.error('Failed to fetch commands:', error);
+    } catch (err) {
+      error = 'Failed to load commands. Please try again.';
+      console.error('Failed to fetch commands:', err);
+      setTimeout(clearError, 5000);
     } finally {
       // Only update loading state if this request is still the latest
       if (requestId === currentRequestId) {
@@ -41,6 +48,9 @@
 
 <div class="command-sidebar">
   <h3>Command History</h3>
+  {#if error}
+    <div class="error">{error}</div>
+  {/if}
   {#if loadingCommands}
     <p class="loading">Loading commands...</p>
   {:else if $commandHistory.length === 0}
@@ -116,5 +126,13 @@
   }
   button:hover {
     background: #0b7dda;
+  }
+  .error {
+    background: #ffebee;
+    color: #c62828;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
   }
 </style>
