@@ -46,3 +46,6 @@ coverage/
 
 # User configuration
 ~/.pairadmin/
+
+# Git worktrees
+.worktrees/
