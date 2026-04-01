@@ -74,53 +74,53 @@ llm:
 func TestConfigValidation(t *testing.T) {
 	resetViper(t)
 	tests := []struct {
-		name    string
-		provider string
-		openaiKey string
+		name         string
+		provider     string
+		openaiKey    string
 		anthropicKey string
-		ollamaURL string
-		wantErr bool
+		ollamaURL    string
+		wantErr      bool
 	}{
 		{
-			name:    "valid openai",
-			provider: "openai",
+			name:      "valid openai",
+			provider:  "openai",
 			openaiKey: "sk-test",
-			wantErr: false,
+			wantErr:   false,
 		},
 		{
-			name:    "openai missing api key",
-			provider: "openai",
+			name:      "openai missing api key",
+			provider:  "openai",
 			openaiKey: "",
-			wantErr: true,
+			wantErr:   true,
 		},
 		{
-			name:    "valid anthropic",
-			provider: "anthropic",
+			name:         "valid anthropic",
+			provider:     "anthropic",
 			anthropicKey: "sk-test",
-			wantErr: false,
+			wantErr:      false,
 		},
 		{
-			name:    "anthropic missing api key",
-			provider: "anthropic",
+			name:         "anthropic missing api key",
+			provider:     "anthropic",
 			anthropicKey: "",
-			wantErr: true,
+			wantErr:      true,
 		},
 		{
-			name:    "valid ollama",
-			provider: "ollama",
+			name:      "valid ollama",
+			provider:  "ollama",
 			ollamaURL: "http://localhost:11434",
-			wantErr: false,
+			wantErr:   false,
 		},
 		{
-			name:    "ollama missing base_url",
-			provider: "ollama",
+			name:      "ollama missing base_url",
+			provider:  "ollama",
 			ollamaURL: "",
-			wantErr: true,
+			wantErr:   true,
 		},
 		{
-			name:    "unknown provider",
+			name:     "unknown provider",
 			provider: "unknown",
-			wantErr: true,
+			wantErr:  true,
 		},
 	}
 

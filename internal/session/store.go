@@ -2,6 +2,7 @@ package session
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -16,18 +17,21 @@ type Store struct {
 func NewStore(path string) (*Store, error) {
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open database: %w", err)
 	}
 	if err := db.Ping(); err != nil {
-		return nil, err
+		db.Close()
+		return nil, fmt.Errorf("ping database: %w", err)
 	}
 	// Enable foreign key constraints (SQLite defaults to OFF)
 	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
-		return nil, err
+		db.Close()
+		return nil, fmt.Errorf("enable foreign keys: %w", err)
 	}
 	s := &Store{db: db}
 	if err := s.createTables(); err != nil {
-		return nil, err
+		db.Close()
+		return nil, fmt.Errorf("create tables: %w", err)
 	}
 	return s, nil
 }
@@ -59,7 +63,23 @@ func (s *Store) createTables() error {
 			FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 		)
 	`)
-	return err
+	if err != nil {
+		return err
+	}
+	// Indexes for performance
+	_, err = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_commands_terminal_id ON commands(terminal_id)`)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_commands_session_id ON commands(session_id)`)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_sessions_terminal_id ON sessions(terminal_id)`)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // AddSession creates a new session.
@@ -68,7 +88,10 @@ func (s *Store) AddSession(sessionID, terminalID string) error {
 		"INSERT INTO sessions (id, terminal_id, created_at) VALUES (?, ?, ?)",
 		sessionID, terminalID, time.Now(),
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("add session %q: %w", sessionID, err)
+	}
+	return nil
 }
 
 // AddCommand adds a suggested command to a session.
@@ -80,7 +103,10 @@ func (s *Store) AddCommand(cmd SuggestedCommand) error {
 		cmd.ID, cmd.SessionID, cmd.TerminalID, cmd.Command, cmd.Description, cmd.Context,
 		cmd.CreatedAt, cmd.UsedCount, cmd.LastUsedAt,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("add command %q: %w", cmd.ID, err)
+	}
+	return nil
 }
 
 // GetCommandsByTerminal returns all commands for a terminal.
@@ -91,7 +117,7 @@ func (s *Store) GetCommandsByTerminal(terminalID string) ([]SuggestedCommand, er
 		ORDER BY created_at DESC
 	`, terminalID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query commands for terminal %q: %w", terminalID, err)
 	}
 	defer rows.Close()
 
@@ -101,9 +127,12 @@ func (s *Store) GetCommandsByTerminal(terminalID string) ([]SuggestedCommand, er
 		err := rows.Scan(&cmd.ID, &cmd.SessionID, &cmd.TerminalID, &cmd.Command, &cmd.Description, &cmd.Context,
 			&cmd.CreatedAt, &cmd.UsedCount, &cmd.LastUsedAt)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan command row: %w", err)
 		}
 		commands = append(commands, cmd)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration: %w", err)
 	}
 	return commands, nil
 }
@@ -115,7 +144,19 @@ func (s *Store) IncrementUsedCount(commandID string) error {
 		SET used_count = used_count + 1, last_used_at = ?
 		WHERE id = ?
 	`, time.Now(), commandID)
-	return err
+	if err != nil {
+		return fmt.Errorf("increment used count for command %q: %w", commandID, err)
+	}
+	return nil
+}
+
+// DeleteSession removes a session and its commands (cascade).
+func (s *Store) DeleteSession(sessionID string) error {
+	_, err := s.db.Exec("DELETE FROM sessions WHERE id = ?", sessionID)
+	if err != nil {
+		return fmt.Errorf("delete session %q: %w", sessionID, err)
+	}
+	return nil
 }
 
 // Close closes the database connection.
