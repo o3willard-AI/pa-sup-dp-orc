@@ -93,6 +93,7 @@ func (s *Store) AddSession(sessionID, terminalID string) error {
 	}
 	return nil
 }
+
 // GetSession retrieves a session by ID.
 func (s *Store) GetSession(sessionID string) (*Session, error) {
 	var sess Session

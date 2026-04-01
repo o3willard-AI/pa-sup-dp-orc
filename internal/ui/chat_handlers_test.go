@@ -5,21 +5,33 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
+	"unsafe"
 
 	"github.com/pairadmin/pairadmin/internal/config"
 	"github.com/pairadmin/pairadmin/internal/llm"
 	"github.com/pairadmin/pairadmin/internal/security"
 	"github.com/pairadmin/pairadmin/internal/session"
 )
+
+func testContext(t *testing.T) context.Context {
+	return context.WithValue(context.Background(), testModeKey, true)
+}
+
 type mockGateway struct {
 	completeFunc func(ctx context.Context, req llm.CompletionRequest) (*llm.CompletionResponse, error)
+	capturedReq  *llm.CompletionRequest
 }
 
 func (m *mockGateway) Name() string { return "mock" }
 func (m *mockGateway) Complete(ctx context.Context, req llm.CompletionRequest) (*llm.CompletionResponse, error) {
-	return m.completeFunc(ctx, req)
+	m.capturedReq = &req
+	if m.completeFunc != nil {
+		return m.completeFunc(ctx, req)
+	}
+	return &llm.CompletionResponse{Content: "test response"}, nil
 }
 func (m *mockGateway) StreamComplete(ctx context.Context, req llm.CompletionRequest) (<-chan string, error) {
 	ch := make(chan string)
@@ -28,11 +40,11 @@ func (m *mockGateway) StreamComplete(ctx context.Context, req llm.CompletionRequ
 }
 
 type mockStore struct {
-	addSessionFunc          func(sessionID, terminalID string) error
-	getSessionFunc          func(sessionID string) (*session.Session, error)
-	addCommandFunc          func(cmd session.SuggestedCommand) error
-	getCommandByIDFunc      func(commandID string) (*session.SuggestedCommand, error)
-	incrementUsedCountFunc  func(commandID string) error
+	addSessionFunc         func(sessionID, terminalID string) error
+	getSessionFunc         func(sessionID string) (*session.Session, error)
+	addCommandFunc         func(cmd session.SuggestedCommand) error
+	getCommandByIDFunc     func(commandID string) (*session.SuggestedCommand, error)
+	incrementUsedCountFunc func(commandID string) error
 }
 
 func (m *mockStore) AddSession(sessionID, terminalID string) error {
@@ -117,7 +129,7 @@ func TestNewChatHandlers_ConfigNotInitialized(t *testing.T) {
 func TestChatHandlers_SendMessage_CommandStored(t *testing.T) {
 	setupTestConfig(t)
 	ctx := context.Background()
-	
+
 	store := &mockStore{}
 	clipboard := &mockClipboard{}
 	gateway := &mockGateway{
@@ -125,7 +137,7 @@ func TestChatHandlers_SendMessage_CommandStored(t *testing.T) {
 			return &llm.CompletionResponse{Content: "$ ls -la"}, nil
 		},
 	}
-	
+
 	handlers := &ChatHandlers{
 		ctx:       ctx,
 		gateway:   gateway,
@@ -133,7 +145,7 @@ func TestChatHandlers_SendMessage_CommandStored(t *testing.T) {
 		clipboard: clipboard,
 		filter:    security.DefaultFilter(),
 	}
-	
+
 	store.addSessionFunc = func(sessionID, terminalID string) error {
 		return nil
 	}
@@ -145,7 +157,7 @@ func TestChatHandlers_SendMessage_CommandStored(t *testing.T) {
 		capturedCmd = cmd
 		return nil
 	}
-	
+
 	terminalID := "term-1"
 	message := "list files"
 	resp, err := handlers.SendMessage(terminalID, message)
@@ -166,11 +178,11 @@ func TestChatHandlers_SendMessage_CommandStored(t *testing.T) {
 func TestChatHandlers_CopyCommandToClipboard_Success(t *testing.T) {
 	setupTestConfig(t)
 	ctx := context.Background()
-	
+
 	store := &mockStore{}
 	clipboard := &mockClipboard{}
 	gateway := &mockGateway{}
-	
+
 	handlers := &ChatHandlers{
 		ctx:       ctx,
 		gateway:   gateway,
@@ -178,7 +190,7 @@ func TestChatHandlers_CopyCommandToClipboard_Success(t *testing.T) {
 		clipboard: clipboard,
 		filter:    security.DefaultFilter(),
 	}
-	
+
 	cmd := session.SuggestedCommand{
 		ID:      "cmd-123",
 		Command: "ls -la",
@@ -200,7 +212,7 @@ func TestChatHandlers_CopyCommandToClipboard_Success(t *testing.T) {
 		}
 		return nil
 	}
-	
+
 	err := handlers.CopyCommandToClipboard("cmd-123", "term-1")
 	if err != nil {
 		t.Fatalf("CopyCommandToClipboard failed: %v", err)
@@ -232,5 +244,107 @@ func TestChatHandlers_CopyCommandToClipboard_CommandNotFound(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "retrieve command") {
 		t.Errorf("expected error about retrieve command, got %v", err)
+	}
+}
+
+func TestCreateFilterFromConfig(t *testing.T) {
+	ctx := testContext(t)
+
+	// Test nil config -> default filter
+	filter := createFilterFromConfig(ctx, nil)
+	defaultFilter := security.DefaultFilter()
+	text := "password = secret"
+	if filter.Redact(text) != defaultFilter.Redact(text) {
+		t.Errorf("nil config should return default filter")
+	}
+
+	// Test empty config -> default filter
+	cfg := &config.Config{}
+	filter = createFilterFromConfig(ctx, cfg)
+	if filter.Redact(text) != defaultFilter.Redact(text) {
+		t.Errorf("empty patterns should return default filter")
+	}
+
+	// Test custom pattern
+	cfg.Security.FilterPatterns = []config.FilterPattern{
+		{Pattern: "FOO_\\d+"},
+	}
+	filter = createFilterFromConfig(ctx, cfg)
+	redacted := filter.Redact("secret FOO_123 bar")
+	if redacted != "secret [REDACTED] bar" {
+		t.Errorf("custom pattern not applied, got %q", redacted)
+	}
+
+	// Test invalid regex -> fallback with logging (cannot test logging easily)
+	cfg.Security.FilterPatterns = []config.FilterPattern{
+		{Pattern: "["}, // invalid regex
+	}
+	filter = createFilterFromConfig(ctx, cfg)
+	if filter.Redact(text) != defaultFilter.Redact(text) {
+		t.Errorf("invalid regex should fall back to default filter")
+	}
+}
+
+func TestNewChatHandlers_CustomFilterPatterns(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+	configContent := `llm:
+  provider: openai
+  openai:
+    api_key: dummy
+    model: gpt-4
+    base_url: http://localhost
+security:
+  filter_patterns:
+    - name: "test"
+      pattern: "SECRET_\\w+"
+`
+	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = config.Init(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer config.Init(configPath) // reset
+
+	ctx := testContext(t)
+	store, err := session.NewStore(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create in-memory store: %v", err)
+	}
+	defer store.Close()
+
+	handlers, err := NewChatHandlers(ctx, store)
+	if err != nil {
+		t.Fatalf("NewChatHandlers failed: %v", err)
+	}
+	// Replace gateway with mock to capture request
+	mockGW := &mockGateway{}
+	gatewayField := reflect.ValueOf(handlers).Elem().FieldByName("gateway")
+	if !gatewayField.IsValid() {
+		t.Fatal("gateway field not found")
+	}
+	// Use unsafe to set unexported field
+	ptr := unsafe.Pointer(gatewayField.UnsafeAddr())
+	rf := reflect.NewAt(gatewayField.Type(), ptr).Elem()
+	rf.Set(reflect.ValueOf(mockGW))
+	// Call SendMessage with a secret pattern
+	_, err = handlers.SendMessage("term-1", "hello SECRET_KEY world")
+	if err != nil {
+		t.Fatalf("SendMessage failed: %v", err)
+	}
+	// Check captured request
+	if mockGW.capturedReq == nil {
+		t.Fatal("expected captured request")
+	}
+	// The filtered message should have redacted the secret
+	if len(mockGW.capturedReq.Messages) == 0 {
+		t.Fatal("no messages captured")
+	}
+	content := mockGW.capturedReq.Messages[0].Content
+	if content != "hello [REDACTED] world" {
+		t.Errorf("expected redacted content, got %q", content)
 	}
 }

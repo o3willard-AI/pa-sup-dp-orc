@@ -15,6 +15,12 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+type contextKey int
+
+const (
+	testModeKey contextKey = iota
+)
+
 type store interface {
 	AddSession(sessionID, terminalID string) error
 	GetSession(sessionID string) (*session.Session, error)
@@ -25,6 +31,25 @@ type store interface {
 
 type clipboardManager interface {
 	CopyToTerminal(ctx context.Context, text string, terminalID string) error
+}
+
+func createFilterFromConfig(ctx context.Context, cfg *config.Config) *security.Filter {
+	if cfg == nil || len(cfg.Security.FilterPatterns) == 0 {
+		return security.DefaultFilter()
+	}
+	var rawPatterns []string
+	for _, fp := range cfg.Security.FilterPatterns {
+		rawPatterns = append(rawPatterns, fp.Pattern)
+	}
+	filter, err := security.NewFilter(rawPatterns)
+	if err != nil {
+		// Skip logging in test mode
+		if ctx.Value(testModeKey) == nil {
+			runtime.LogError(ctx, fmt.Sprintf("failed to compile custom filter patterns: %v, falling back to default", err))
+		}
+		return security.DefaultFilter()
+	}
+	return filter
 }
 
 // ChatHandlers manages AI chat interactions.
@@ -61,7 +86,7 @@ func NewChatHandlers(ctx context.Context, store *session.Store) (*ChatHandlers, 
 		return nil, fmt.Errorf("unknown provider %q", cfg.LLM.Provider)
 	}
 
-	filter := security.DefaultFilter()
+	filter := createFilterFromConfig(ctx, cfg)
 
 	return &ChatHandlers{
 		ctx:       ctx,
