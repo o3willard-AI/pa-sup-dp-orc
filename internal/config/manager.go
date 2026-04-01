@@ -1,8 +1,10 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/spf13/viper"
 )
@@ -44,13 +46,37 @@ type FilterPattern struct {
 	Pattern string `mapstructure:"pattern"`
 }
 
+func (c *Config) validate() error {
+	switch c.LLM.Provider {
+	case "openai":
+		if c.LLM.OpenAI.APIKey == "" {
+			return errors.New("openai provider requires api_key")
+		}
+	case "anthropic":
+		if c.LLM.Anthropic.APIKey == "" {
+			return errors.New("anthropic provider requires api_key")
+		}
+	case "ollama":
+		if c.LLM.Ollama.BaseURL == "" {
+			return errors.New("ollama provider requires base_url")
+		}
+	default:
+		return errors.New("unknown provider")
+	}
+	return nil
+}
+
 var (
 	globalConfig *Config
 	configPath   string
+	configMu     sync.RWMutex
 )
 
 // Init loads configuration from file and environment variables.
 func Init(configFile string) error {
+	configMu.Lock()
+	defer configMu.Unlock()
+
 	configPath = configFile
 	viper.SetConfigFile(configFile)
 	viper.SetConfigType("yaml")
@@ -93,16 +119,34 @@ func Init(configFile string) error {
 		return err
 	}
 
+	// Validate provider-specific fields
+	if err := globalConfig.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Get returns the global configuration.
 func Get() *Config {
+	configMu.RLock()
+	defer configMu.RUnlock()
 	return globalConfig
 }
 
 // Save writes the current configuration to disk.
 func Save() error {
+	configMu.RLock()
+	defer configMu.RUnlock()
+
+	if globalConfig == nil {
+		return errors.New("config not initialized")
+	}
+
+	if err := globalConfig.validate(); err != nil {
+		return err
+	}
+
 	viper.Set("llm", globalConfig.LLM)
 	viper.Set("security", globalConfig.Security)
 	viper.Set("ui", globalConfig.UI)
