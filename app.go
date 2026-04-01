@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pairadmin/pairadmin/internal/config"
+	"github.com/pairadmin/pairadmin/internal/hotkeys"
 	"github.com/pairadmin/pairadmin/internal/session"
 	"github.com/pairadmin/pairadmin/internal/ui"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -25,6 +26,7 @@ type App struct {
 	sessionStore     *session.Store
 	terminalHandlers *ui.TerminalHandlers
 	chatHandlers     *ui.ChatHandlers
+	hotkeyManager    *hotkeys.Manager
 }
 
 // NewApp creates a new App application struct
@@ -47,6 +49,24 @@ func (a *App) startup(ctx context.Context) {
 		runtime.LogError(ctx, fmt.Sprintf("failed to init config: %v", err))
 		panic(fmt.Sprintf("failed to initialize configuration: %v", err))
 	}
+
+	// Initialize hotkey manager
+	hotkeyMgr := hotkeys.NewManager()
+	// Register hotkeys from config
+	cfg := config.Get()
+	if cfg != nil {
+		hotkeyMgr.Register(cfg.UI.Hotkeys.CopyLastCommand, func() {
+			// TODO: implement copy last command action
+			runtime.LogInfo(ctx, "Hotkey: copy last command")
+		})
+		hotkeyMgr.Register(cfg.UI.Hotkeys.FocusApp, func() {
+			// TODO: implement focus app action
+			runtime.LogInfo(ctx, "Hotkey: focus app")
+		})
+	}
+	a.hotkeyManager = hotkeyMgr
+	// Start hotkey listener (commented until platform‑specific implementation)
+	// go hotkeyMgr.Start()
 
 	// Initialize session store
 	dbPath := filepath.Join(filepath.Dir(a.configPath), "sessions.db")
