@@ -5,7 +5,9 @@ go 1.25.0
 require (
 	github.com/spf13/viper v1.21.0
 	github.com/wailsapp/wails/v2 v2.12.0
+	golang.design/x/clipboard v0.7.1
 	golang.org/x/sys v0.42.0
+	modernc.org/sqlite v1.48.0
 )
 
 require (
@@ -47,7 +49,6 @@ require (
 	github.com/wailsapp/go-webview2 v1.0.22 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.design/x/clipboard v0.7.1 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
 	golang.org/x/image v0.28.0 // indirect
@@ -57,7 +58,6 @@ require (
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.48.0 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.12.0 => /home/sblanken/go/pkg/mod

@@ -93,6 +93,15 @@ func (s *Store) AddSession(sessionID, terminalID string) error {
 	}
 	return nil
 }
+// GetSession retrieves a session by ID.
+func (s *Store) GetSession(sessionID string) (*Session, error) {
+	var sess Session
+	err := s.db.QueryRow("SELECT id, terminal_id, created_at FROM sessions WHERE id = ?", sessionID).Scan(&sess.ID, &sess.TerminalID, &sess.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("get session %q: %w", sessionID, err)
+	}
+	return &sess, nil
+}
 
 // AddCommand adds a suggested command to a session.
 func (s *Store) AddCommand(cmd SuggestedCommand) error {
@@ -135,6 +144,16 @@ func (s *Store) GetCommandsByTerminal(terminalID string) ([]SuggestedCommand, er
 		return nil, fmt.Errorf("rows iteration: %w", err)
 	}
 	return commands, nil
+}
+
+// GetCommandByID retrieves a command by ID.
+func (s *Store) GetCommandByID(commandID string) (*SuggestedCommand, error) {
+	var cmd SuggestedCommand
+	err := s.db.QueryRow("SELECT id, session_id, terminal_id, command, description, context, created_at, used_count, last_used_at FROM commands WHERE id = ?", commandID).Scan(&cmd.ID, &cmd.SessionID, &cmd.TerminalID, &cmd.Command, &cmd.Description, &cmd.Context, &cmd.CreatedAt, &cmd.UsedCount, &cmd.LastUsedAt)
+	if err != nil {
+		return nil, fmt.Errorf("get command %q: %w", commandID, err)
+	}
+	return &cmd, nil
 }
 
 // IncrementUsedCount increments the used count of a command.

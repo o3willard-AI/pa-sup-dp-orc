@@ -9,6 +9,7 @@ import (
 	"github.com/pairadmin/pairadmin/internal/config"
 	"github.com/pairadmin/pairadmin/internal/session"
 	"github.com/pairadmin/pairadmin/internal/ui"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -37,14 +38,16 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.configPath = filepath.Join(configDir, "pairadmin", "config.yaml")
 	if err := config.Init(a.configPath); err != nil {
-		panic(fmt.Sprintf("failed to init config: %v", err))
+		runtime.LogError(ctx, fmt.Sprintf("failed to init config: %v", err))
+		panic(fmt.Sprintf("failed to initialize configuration: %v", err))
 	}
 
 	// Initialize session store
 	dbPath := filepath.Join(filepath.Dir(a.configPath), "sessions.db")
 	store, err := session.NewStore(dbPath)
 	if err != nil {
-		panic(fmt.Sprintf("failed to init session store: %v", err))
+		runtime.LogError(ctx, fmt.Sprintf("failed to init session store: %v", err))
+		panic(fmt.Sprintf("failed to initialize session store: %v", err))
 	}
 	a.sessionStore = store
 
@@ -56,7 +59,8 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize chat handlers
 	chatHandlers, err := ui.NewChatHandlers(ctx, store)
 	if err != nil {
-		panic(fmt.Sprintf("failed to init chat handlers: %v", err))
+		runtime.LogError(ctx, fmt.Sprintf("failed to init chat handlers: %v", err))
+		panic(fmt.Sprintf("failed to initialize chat handlers: %v", err))
 	}
 	a.chatHandlers = chatHandlers
 }

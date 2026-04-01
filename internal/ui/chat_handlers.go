@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -14,12 +15,24 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+type store interface {
+	AddSession(sessionID, terminalID string) error
+	GetSession(sessionID string) (*session.Session, error)
+	AddCommand(cmd session.SuggestedCommand) error
+	GetCommandByID(commandID string) (*session.SuggestedCommand, error)
+	IncrementUsedCount(commandID string) error
+}
+
+type clipboardManager interface {
+	CopyToTerminal(ctx context.Context, text string, terminalID string) error
+}
+
 // ChatHandlers manages AI chat interactions.
 type ChatHandlers struct {
 	ctx       context.Context
 	gateway   llm.Gateway
-	store     *session.Store
-	clipboard *clipboard.Manager
+	store     store
+	clipboard clipboardManager
 	filter    *security.Filter
 }
 
@@ -82,9 +95,20 @@ func (c *ChatHandlers) SendMessage(terminalID, message string) (string, error) {
 	// (simplistic heuristic: starts with $ or >)
 	cmdText := resp.Content
 	if len(cmdText) > 0 && (cmdText[0] == '$' || cmdText[0] == '>') {
+		// Ensure a session exists for this terminal (session ID = terminalID)
+		_, sessionErr := c.store.GetSession(terminalID)
+		if sessionErr != nil && sessionErr != sql.ErrNoRows {
+			runtime.LogError(c.ctx, fmt.Sprintf("failed to check session: %v", sessionErr))
+		} else if sessionErr == sql.ErrNoRows {
+			// Create session
+			if err := c.store.AddSession(terminalID, terminalID); err != nil {
+				runtime.LogError(c.ctx, fmt.Sprintf("failed to create session: %v", err))
+			}
+		}
+
 		cmd := session.SuggestedCommand{
 			ID:          fmt.Sprintf("cmd-%d", time.Now().UnixNano()),
-			SessionID:   terminalID, // Using terminalID as session ID for now
+			SessionID:   terminalID,
 			TerminalID:  terminalID,
 			Command:     cmdText,
 			Description: "AI‑suggested command",
@@ -103,9 +127,11 @@ func (c *ChatHandlers) SendMessage(terminalID, message string) (string, error) {
 
 // CopyCommandToClipboard copies a command to clipboard and increments usage.
 func (c *ChatHandlers) CopyCommandToClipboard(commandID, terminalID string) error {
-	// TODO: retrieve command from store and copy its text
-	// For now, just copy a placeholder
-	err := c.clipboard.CopyToTerminal(c.ctx, "echo 'command copied'", terminalID)
+	cmd, err := c.store.GetCommandByID(commandID)
+	if err != nil {
+		return fmt.Errorf("retrieve command: %w", err)
+	}
+	err = c.clipboard.CopyToTerminal(c.ctx, cmd.Command, terminalID)
 	if err != nil {
 		return err
 	}
