@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-vgo/robotgo"
+	_ "github.com/go-vgo/robotgo"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Manager handles global hotkey registration.
@@ -21,6 +23,7 @@ func NewManager() *Manager {
 
 // Register binds a hotkey string (e.g., "Ctrl+Shift+C") to a callback.
 func (m *Manager) Register(hotkey string, callback func()) error {
+	// Parse and validate hotkey format; modifiers and key are reserved for future use
 	_, _, err := parseHotkey(hotkey)
 	if err != nil {
 		return err
@@ -38,7 +41,7 @@ func (m *Manager) Register(hotkey string, callback func()) error {
 func (m *Manager) Start() error {
 	// TODO: implement platform‑specific global hotkey listening
 	// This may require separate implementations for Windows/macOS/Linux
-	_ = robotgo.Version // keep import for now
+	// robotgo imported for future platform-specific hotkey registration
 	return nil
 }
 
@@ -53,10 +56,19 @@ func parseHotkey(hotkey string) (modifiers []string, key string, err error) {
 		return nil, "", fmt.Errorf("hotkey must include modifier and key")
 	}
 	key = parts[len(parts)-1]
+	if key == "" {
+		return nil, "", fmt.Errorf("hotkey key cannot be empty")
+	}
 	modifiers = parts[:len(parts)-1]
+	for _, mod := range modifiers {
+		if mod == "" {
+			return nil, "", fmt.Errorf("hotkey modifier cannot be empty")
+		}
+	}
 	// Normalize modifier names
+	caser := cases.Title(language.English)
 	for i, mod := range modifiers {
-		modifiers[i] = strings.Title(strings.ToLower(mod))
+		modifiers[i] = caser.String(strings.ToLower(mod))
 	}
 	return modifiers, key, nil
 }
