@@ -7,6 +7,7 @@ import (
 // SuggestedCommand represents a command suggested by the AI.
 type SuggestedCommand struct {
 	ID          string    `json:"id"`
+	SessionID   string    `json:"session_id"`
 	TerminalID  string    `json:"terminal_id"`
 	Command     string    `json:"command"`
 	Description string    `json:"description"`

@@ -21,6 +21,10 @@ func NewStore(path string) (*Store, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
+	// Enable foreign key constraints (SQLite defaults to OFF)
+	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		return nil, err
+	}
 	s := &Store{db: db}
 	if err := s.createTables(); err != nil {
 		return nil, err
@@ -73,7 +77,7 @@ func (s *Store) AddCommand(cmd SuggestedCommand) error {
 		`INSERT INTO commands 
 		(id, session_id, terminal_id, command, description, context, created_at, used_count, last_used_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		cmd.ID, cmd.TerminalID, cmd.TerminalID, cmd.Command, cmd.Description, cmd.Context,
+		cmd.ID, cmd.SessionID, cmd.TerminalID, cmd.Command, cmd.Description, cmd.Context,
 		cmd.CreatedAt, cmd.UsedCount, cmd.LastUsedAt,
 	)
 	return err
@@ -82,7 +86,7 @@ func (s *Store) AddCommand(cmd SuggestedCommand) error {
 // GetCommandsByTerminal returns all commands for a terminal.
 func (s *Store) GetCommandsByTerminal(terminalID string) ([]SuggestedCommand, error) {
 	rows, err := s.db.Query(`
-		SELECT id, terminal_id, command, description, context, created_at, used_count, last_used_at
+		SELECT id, session_id, terminal_id, command, description, context, created_at, used_count, last_used_at
 		FROM commands WHERE terminal_id = ?
 		ORDER BY created_at DESC
 	`, terminalID)
@@ -94,7 +98,7 @@ func (s *Store) GetCommandsByTerminal(terminalID string) ([]SuggestedCommand, er
 	var commands []SuggestedCommand
 	for rows.Next() {
 		var cmd SuggestedCommand
-		err := rows.Scan(&cmd.ID, &cmd.TerminalID, &cmd.Command, &cmd.Description, &cmd.Context,
+		err := rows.Scan(&cmd.ID, &cmd.SessionID, &cmd.TerminalID, &cmd.Command, &cmd.Description, &cmd.Context,
 			&cmd.CreatedAt, &cmd.UsedCount, &cmd.LastUsedAt)
 		if err != nil {
 			return nil, err
