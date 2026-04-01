@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/pairadmin/pairadmin/internal/llm"
 )
@@ -25,7 +27,7 @@ func NewOpenAIProvider(apiKey, model, baseURL string) *OpenAIProvider {
 		apiKey:  apiKey,
 		model:   model,
 		baseURL: baseURL,
-		client:  &http.Client{},
+		client:  &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -68,8 +70,22 @@ type openAIResponse struct {
 	} `json:"usage"`
 }
 
+// normalizeBaseURL ensures the baseURL does not end with a slash.
+func normalizeBaseURL(baseURL string) string {
+	return strings.TrimSuffix(baseURL, "/")
+}
+
 // Complete sends a completion request to OpenAI.
 func (p *OpenAIProvider) Complete(ctx context.Context, req llm.CompletionRequest) (*llm.CompletionResponse, error) {
+	if p.apiKey == "" {
+		return nil, fmt.Errorf("API key is required")
+	}
+	if p.model == "" {
+		return nil, fmt.Errorf("model is required")
+	}
+	if p.baseURL == "" {
+		return nil, fmt.Errorf("base URL is required")
+	}
 	openAIReq := openAIRequest{
 		Model:       p.model,
 		MaxTokens:   req.MaxTokens,
@@ -88,7 +104,7 @@ func (p *OpenAIProvider) Complete(ctx context.Context, req llm.CompletionRequest
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/chat/completions", bytes.NewReader(body))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", normalizeBaseURL(p.baseURL)+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -102,7 +118,10 @@ func (p *OpenAIProvider) Complete(ctx context.Context, req llm.CompletionRequest
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		limitedReader := io.LimitReader(resp.Body, 1<<20) // 1MB
+		bodyBytes, _ := io.ReadAll(limitedReader)
+		// Drain remaining body to allow connection reuse
+		io.Copy(io.Discard, resp.Body)
 		return nil, fmt.Errorf("openai api error %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
