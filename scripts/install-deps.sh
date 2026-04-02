@@ -26,6 +26,36 @@ echo "  ✓ Go: $(go version)"
 echo "  ✓ npm: $(npm --version)"
 echo ""
 
+# Install system dependencies (Linux only)
+if [[ "$(uname)" == "Linux" ]]; then
+    echo "Detected Linux, installing system packages..."
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y \
+            libatspi2.0-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxtst-dev \
+            libgtk-3-dev \
+            webkit2gtk-4.1-dev \
+            pkg-config
+        echo "  ✓ Linux system packages installed"
+        
+        # Ensure webkit2gtk-4.0.pc symlink exists for Wails
+        if [ ! -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc ] && [ -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc ]; then
+            sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
+            echo "  ✓ Created webkit2gtk-4.0.pc symlink"
+        fi
+    else
+        echo "WARNING: apt-get not found, system dependencies may be missing"
+    fi
+fi
+
+echo ""
+
 # Install Wails CLI
 echo "Installing Wails CLI..."
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -52,6 +82,14 @@ cd frontend
 npm install
 echo "  ✓ Frontend dependencies installed"
 cd ..
+
+# Install root npm dependencies (for electron-builder fallback)
+if [ -f "package.json" ]; then
+    echo "Installing root npm dependencies..."
+    npm install --only=dev
+    echo "  ✓ Root npm dependencies installed"
+fi
+
 echo ""
 
 # Verify installations

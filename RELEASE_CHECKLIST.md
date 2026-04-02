@@ -1,12 +1,12 @@
 # PairAdmin v2.0 Release Checklist
 
 ## Pre‑Release
-- [ ] All unit tests pass (`go test ./internal/...`)
-- [ ] Integration tests pass (`./scripts/test-integration.sh`)
-- [ ] End‑to‑end tests pass (`./scripts/test-e2e.sh`)
-- [ ] No known critical bugs
-- [ ] Documentation updated (user guide, installation)
-- [ ] Version number updated in `wails.json`
+- [x] All unit tests pass (`go test ./internal/...`)
+- [x] Integration tests pass (`./scripts/test-integration.sh`)
+- [x] End‑to‑end tests pass (`./scripts/test-e2e.sh`)
+- [x] No known critical bugs
+- [x] Documentation updated (user guide, installation)
+- [x] Version number updated in `wails.json`
 
 ## Packaging
 - [ ] macOS `.dmg` builds successfully
@@ -24,3 +24,5 @@
 - [ ] Monitor error logs
 - [ ] Gather user feedback
 - [ ] Plan next iteration
+
+**Note**: Packaging and release steps require a remote Git repository with GitHub Actions enabled. Tag `v2.0.0` has been created locally. Push to remote to trigger automated builds.
