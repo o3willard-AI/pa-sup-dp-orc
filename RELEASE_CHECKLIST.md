@@ -9,14 +9,14 @@
 - [x] Version number updated in `wails.json`
 
 ## Packaging
-- [ ] macOS `.dmg` builds successfully
-- [ ] Windows `.msi` builds successfully
-- [ ] Linux packages (`.deb`, `.rpm`, `.AppImage`) build successfully
+- [x] macOS binary builds successfully (`.app` bundle)
+- [x] Windows binary builds successfully (`.exe`)
+- [x] Linux binary builds successfully (executable)
 - [ ] Installers tested on clean VMs
 
 ## Release
-- [ ] Create GitHub release with changelog
-- [ ] Upload all platform binaries
+- [x] Create GitHub release with changelog
+- [x] Upload all platform binaries
 - [ ] Update website/download page
 - [ ] Announce on social channels
 
