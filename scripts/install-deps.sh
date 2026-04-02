@@ -86,7 +86,7 @@ cd ..
 # Install root npm dependencies (for electron-builder fallback)
 if [ -f "package.json" ]; then
     echo "Installing root npm dependencies..."
-    npm install --only=dev
+    npm install --only=development
     echo "  ✓ Root npm dependencies installed"
 fi
 
