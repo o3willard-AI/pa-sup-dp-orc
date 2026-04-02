@@ -1,8 +1,8 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/99designs/keyring"
 )
@@ -31,14 +31,17 @@ func (k *Keychain) Set(key, value string) error {
 		Label:       fmt.Sprintf("PairAdmin: %s", key),
 		Description: "API key or other sensitive data",
 	}
-	return k.ring.Set(item)
+	if err := k.ring.Set(item); err != nil {
+		return fmt.Errorf("set to keyring: %w", err)
+	}
+	return nil
 }
 
 // Get retrieves a secret from the keychain.
 func (k *Keychain) Get(key string) (string, error) {
 	item, err := k.ring.Get(key)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "no such") {
+		if errors.Is(err, keyring.ErrKeyNotFound) {
 			return "", fmt.Errorf("key %q not found in keychain", key)
 		}
 		return "", fmt.Errorf("get from keyring: %w", err)
@@ -48,5 +51,8 @@ func (k *Keychain) Get(key string) (string, error) {
 
 // Delete removes a secret from the keychain.
 func (k *Keychain) Delete(key string) error {
-	return k.ring.Remove(key)
+	if err := k.ring.Remove(key); err != nil {
+		return fmt.Errorf("delete from keyring: %w", err)
+	}
+	return nil
 }
