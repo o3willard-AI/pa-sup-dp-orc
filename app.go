@@ -45,9 +45,9 @@ func (a *App) startup(ctx context.Context) {
 		configDir = "."
 	}
 	a.configPath = filepath.Join(configDir, "pairadmin", "config.yaml")
-	if err := config.Init(a.configPath); err != nil {
-		runtime.LogError(ctx, fmt.Sprintf("failed to init config: %v", err))
-		panic(fmt.Sprintf("failed to initialize configuration: %v", err))
+	if err := config.InitWithKeychain(a.configPath, "pairadmin"); err != nil {
+		runtime.LogError(ctx, fmt.Sprintf("failed to init config with keychain: %v", err))
+		panic(fmt.Sprintf("failed to initialize configuration with keychain: %v", err))
 	}
 
 	// Initialize hotkey manager
