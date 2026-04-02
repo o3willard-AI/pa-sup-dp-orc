@@ -1,0 +1,5 @@
+{
+  "task_spec": "See docs/tasks/2.3-spec.md",
+  "existing_context": "Task 2.1 complete: internal/terminal/types.go has TerminalAdapter interface. Task 2.2 complete: internal/terminal/tmux/adapter.go implements tmux adapter. Follow Go patterns from previous tasks.",
+  "implementation_notes": "Create internal/terminal/detector.go with Detector struct, Start/Stop/GetSessions methods, background polling goroutine, event channel. Create detector_test.go with unit tests. Use sync.RWMutex for thread safety."
+}

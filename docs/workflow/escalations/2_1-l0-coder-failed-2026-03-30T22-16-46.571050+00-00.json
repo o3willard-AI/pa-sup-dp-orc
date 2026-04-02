@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-03-30T22:16:46.571050+00:00Z",
+  "task_id": "2.1",
+  "tier": "L0-Coder",
+  "attempts": 3,
+  "success": false,
+  "error": "LM Studio API error: 400 - {\"error\":\"Context size has been exceeded.\"}",
+  "ready_for_escalation": true,
+  "context_summary": {
+    "task_spec": "# Task Specification: 2.1 - Define Terminal Adapter Interface\n\n**Document Path:** `docs/tasks/2.1-define-terminal-adapter-interface.md`\n\n---\n\n## 1. Task Metadata\n\n| Field | Value |\n|-------|-------|\n|",
+    "task_spec_path": "docs/tasks/2.1-spec.md",
+    "existing_context": "Phase 1 foundation complete: go.mod, wails.json, .gitignore, scripts/install-deps.sh, .github/workflows/build.yml all exist. Go module initialized, Wails scaffolded.",
+    "implementation_notes": "Use standard Go patterns. Package name should be 'terminal'. Create internal/terminal/ directory. Follow Go 1.21+ conventions."
+  }
+}

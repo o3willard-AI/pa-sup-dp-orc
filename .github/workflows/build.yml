@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        chmod +x scripts/install-deps.sh
+        ./scripts/install-deps.sh
+
+    - name: Build with Wails
+      shell: bash
+      run: |
+        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        wails build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pairadmin-${{ matrix.os }}
+        path: build/bin/

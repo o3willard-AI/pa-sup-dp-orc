@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-03-30T14:00:00Z",
+  "task_id": "2.5",
+  "escalation_level": "L1",
+  "from_tier": "Reviewer",
+  "to_tier": "L1",
+  "reason": "Second rejection - L0 consistently misunderstood CGO binding requirements",
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "coder": "L0",
+      "outcome": "REJECT",
+      "issues": ["Missing CGO preamble", "Incorrect C function signatures"]
+    },
+    {
+      "attempt": 2,
+      "coder": "L0",
+      "outcome": "REJECT",
+      "issues": ["Still missing CGO preamble", "Memory management concerns"]
+    }
+  ]
+}

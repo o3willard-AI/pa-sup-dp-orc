@@ -1,0 +1,10 @@
+{
+  "task_id": "2.5",
+  "task_name": "macOS Accessibility CGO Bindings",
+  "tier": "L1-Coder",
+  "attempt": 2,
+  "spec_file": "docs/tasks/2.5-spec.md",
+  "instructions": "Create macOS Accessibility CGO bindings. YOU MUST USE file_write TOOL CALLS to create files. Format: file_write(\"path/to/file\", \"\"\"content\"\"\"). Create these files:\n1. internal/terminal/macos/accessibility.h - C header\n2. internal/terminal/macos/accessibility.m - Objective-C implementation\n3. internal/terminal/macos/accessibility_cgo.go - Go CGO wrapper (darwin build tag)\n4. internal/terminal/macos/accessibility_stub.go - Stub for other platforms\n5. internal/terminal/macos/accessibility_test.go - Tests",
+  "escalation_from": "L0-Coder (context size exceeded)",
+  "previous_attempt_issue": "Code was output in response but file_write tools were not called. Use file_write() tool calls."
+}

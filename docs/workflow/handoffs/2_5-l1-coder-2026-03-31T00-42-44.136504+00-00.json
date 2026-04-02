@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-03-31T00:42:44.136504+00:00Z",
+  "task_id": "2.5",
+  "tier": "L1-Coder",
+  "attempt": 1,
+  "duration_seconds": 51.567148,
+  "success": true,
+  "input_context": {
+    "task_id": "2.5",
+    "task_name": "macOS Accessibility CGO Bindings",
+    "tier": "L1-Coder",
+    "attempt": 1,
+    "spec_file": "docs/tasks/2.5-spec.md",
+    "instructions": "Create macOS Accessibility CGO bindings for Terminal.app content capture. Files: internal/terminal/macos/accessibility.h, internal/terminal/macos/accessibility.m, internal/terminal/macos/accessibility_cgo.go (macOS), internal/terminal/macos/accessibility_stub.go (other platforms). See spec for details.",
+    "escalation_from": "L0-Coder (context size exceeded)"
+  },
+  "output_preview": "```c\n// internal/terminal/macos/accessibility.h\n#ifndef PAIRADMIN_ACCESSIBILITY_H\n#define PAIRADMIN_ACCESSIBILITY_H\n\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n/**\n * L0 Learning: This C header provides a stable ABI for CGO to call into Objective-C code.\n * Objective-C is superset of C, but we use extern \"C\" to avoid name mangling.\n * Returns malloc-allocated UTF-8 string; caller frees with ReleaseTerminalContent.\n */\nconst char *GetTerminalContent(void);\n\n/**\n * Frees the malloc-allocated string f...",
+  "tool_results": {
+    "tool_results": [],
+    "tools_executed": 0,
+    "all_succeeded": true
+  }
+}

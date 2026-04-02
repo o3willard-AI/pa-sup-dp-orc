@@ -1,0 +1,15 @@
+{
+  "task_id": "2.7",
+  "task_name": "Extend Terminal Detector for macOS",
+  "tier": "L0-Coder",
+  "attempt": 1,
+  "spec_file": "docs/tasks/2.7-spec.md",
+  "instructions": "Task 2.7: Extend Terminal Detector for macOS auto-registration.\n\nYOU MUST USE file_write() TOOL CALLS. Format:\nfile_write(\"path/to/file\", \"\"\"complete file content\"\"\")\n\nModify these files:\n1. internal/terminal/detector.go - Add auto-registration of adapters\n   - Import macos and tmux packages\n   - Modify NewDetector() to auto-register adapters\n   - Add RequestAccessibilityPermission() method\n   - Add GetAdapterStatus() method and AdapterStatus struct\n   - Add isMacOSAdapterAvailable() helper\n\n2. internal/terminal/detector_test.go - Add tests for auto-registration\n\nRead spec at docs/tasks/2.7-spec.md for details.\n\nKey requirements:\n- Auto-register tmux adapter on all platforms\n- Auto-register macOS adapter when on macOS with accessibility\n- Graceful handling on non-macOS platforms",
+  "dependencies": ["Task 2.3: Detector", "Task 2.6: macOS Adapter"],
+  "existing_files": [
+    "internal/terminal/detector.go - Current detector implementation",
+    "internal/terminal/detector_test.go - Current tests",
+    "internal/terminal/macos/adapter.go - macOS adapter (darwin only)",
+    "internal/terminal/tmux/adapter.go - tmux adapter"
+  ]
+}

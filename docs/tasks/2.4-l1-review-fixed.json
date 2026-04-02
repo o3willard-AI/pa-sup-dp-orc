@@ -1,0 +1,109 @@
+{
+  "task_spec_excerpt": "# Task Specification: 2.4 - Integrate Terminal Capture with UI
+
+**File:** `docs/tasks/2.4-integrate-terminal-capture-with-ui.md`
+
+---
+
+## 1. Task Metadata
+
+| Field | Value |
+|-------|-------|
+| **Task ID** | 2.4 |
+| **Title** | Integrate Terminal Capture with UI |
+| **Phase** | Phase 2: Terminal Integration |
+| **Estimated Effort** | 4-6 hours |
+| **Dependencies** | 2.1 (Terminal detection foundation), 2.2 (tmux adapter implementation), 2.3 (Terminal capture service) |
+| **Section Reference** | Week 7-8: tmux Adapter |
+
+---
+
+## 2. Description
+
+This task connects the terminal capture backend (implemented in tasks 2.1-2.3) with the Wails frontend UI. You will update the UI handlers to receive terminal content updates from the capture service and push them to the frontend via Wails events. The terminal preview pane (left column) will display real-time captured terminal content, and users will be able to switch between detected tmux sessions via tab selection.
+
+This task matters because it completes the data flow from terminal detection → capture → UI display, enabling the core "Pair Administration" experience where humans can observe AI-managed terminal sessions in real-time.
+
+---
+
+## 3. Inputs
+
+### Existing Files/Artifacts
+The Coder will need these files (already created by prior tasks):
+
+| File Path | Purpose |
+|-----------|---------|
+| `internal/terminal/types.go` | Terminal session types and data structures |
+| `internal/terminal/errors.go` | Terminal-related error definitions |
+| `internal/terminal/tmux/adapter.go` | tmux adapter implementation |
+| `internal/terminal/detector.go` | Terminal session detection logic |
+| `internal/terminal/capture/service.go` | Terminal capture service (from 2.3) |
+| `internal/ui/handlers.go` | UI event handlers (needs updating) |
+| `frontend/src/components/TerminalPreview.jsx` | Terminal preview component |
+| `frontend/src/components/SessionTabs.jsx` | Session tab selector component |
+| `frontend/src/stores/terminalStore.js` | Frontend state management |
+
+### Existing Interfaces/Contracts
+
+```go
+// From internal/terminal/types.go
+type TerminalSession struct {
+    ID        string",
+  "implementation_excerpt": "### Step 1: Analyze Previous Failures
+- **Original spec inference**: From escalation notes and context, Task 2.4 requires creating `internal/ui/terminal_handlers.go` as Wails backend handlers. It must integrate with `Detector` from Task 2.3 (assumed to be `internal/detector.Detector` providing service detection). Key features: manage terminal sessions (start for services), handle selection/tab switching, stream real-time output/input via `runtime.Events.Emit()`. No explicit mention of file I/O/JSON in notes, but escalation cites L0's struggle there.
+- **L0 Attempt 1**: Focused on reading `wails.json` (succeeded) but failed JSON parsing twice (likely struct mismatch or error handling). No handlers or session logic.
+- **L0 Attempt 2**: Read only "spec file" (perhaps task.md?), produced zero implementation files. Stuck in loop without core logic.
+- **Reviewer notes**: ESCALATE - L0 stuck, no files created.
+- **Root cause**: Knowledge gap - L0 fixated on unrelated/misunderstood file I/O + JSON (perhaps hallucinated from "config" or prior tasks), ignored core Wails handlers/events/Detector integration. Failed to produce any code structure. Complexity: Basic Go concurrency (goroutines/pipes) + Wails patterns too high for L0.
+
+### Step 2: Plan Your Approach
+- **What L0 got wrong**: No files, no handlers, no events, no Detector use, no session mgmt. Chased phantom JSON instead of spec (events + terminals).
+- **Key differences**:
+  1. Direct Wails handler struct with `exec.Command` pipes for pseudo-terminal (stdout/stderr streaming via goroutines/events). No CGO/pty.
+  2. Mutex-protected session map, integrated `Detector.Detect()` for service-based sessions.
+  3. Events for real-time UI: "terminal-output", "terminal-session-started", "terminal-session-selected", "terminal-tab-switched".
+  4. Simple input forwarding via stdin pipe.
+- **Additional context**: Assume `internal/detector` exists from 2.3 with `type Detector struct{}; func NewDetector() *Detector; func (d *Detector) Detect(ctx context.Context) ([]Service, error); type Service struct{Name string}`. IDs generated simply (serviceName + index). No JSON/file I/O needed per notes.
+- **Explanatory comments**: Add for pipes, goroutines, events, mutexes, error handling.
+
+### Step 3: Implement
+Created `internal/ui/terminal_handlers.go` below. Matches Wails v2 patterns (struct methods as RPC/events). Handles selection (SelectSession), tabs (SwitchTab, assuming tabs=views), sessions (StartSessionForService, SendInput). Streams output real-time.
+
+**internal/ui/terminal_handlers.go**
+```go
+// Package ui provides Wails backend handlers for UI features like terminals.
+package ui
+
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"io"
+	"os/exec"
+	"sync"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"pairadmin/internal/detector" // From Task 2.3: Service detector
+)
+
+// TerminalHandlers manages multiple terminal sessions with real-time streaming to frontend.
+// Integrates with Detector to start sessions for detected services.
+// L0 Learning: No file I/O/JSON needed here; focus on Wails events + exec pipes for "terminal".
+type TerminalHandlers struct {
+	detector *detector.Detector
+	sessions map[string]*TerminalSession // sessionID -> session
+	mu       sync.RWMutex
+}
+
+// TerminalSession represents a single terminal session (pseudo-pty via pipes).
+// Streams output via goroutines/EventsEmit for xterm.js frontend.
+type TerminalSession struct {",
+  "tier": "L1-Coder (Grok 4.1 Fast)",
+  "review_criteria": [
+    "Does code integrate with Detector from Task 2.3?",
+    "Are Wails Events.Emit() calls present?",
+    "Does it handle terminal session selection?",
+    "Code quality assessment"
+  ]
+}

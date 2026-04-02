@@ -1,0 +1,15 @@
+{
+  "task_id": "2.7",
+  "task_name": "Extend Terminal Detector for macOS",
+  "tier": "L1-Coder",
+  "attempt": 1,
+  "spec_file": "docs/tasks/2.7-spec.md",
+  "instructions": "Task 2.7: Extend Terminal Detector for macOS auto-registration.\n\nYOU MUST USE file_write() TOOL CALLS. Format:\nfile_write(\"path/to/file\", \"\"\"content with actual newlines\nnot escaped \\n characters\"\"\")\n\nCRITICAL: Use actual newlines in file content, NOT escaped \\n\n\nCreate these files:\n\n1. internal/terminal/detector.go - Modify to support adapters\n   - Add adapters []TerminalAdapter field to Detector struct\n   - Modify NewDetector() to accept optional adapters\n   - Add GetAdapterStatus() method returning []AdapterStatus\n   - Add AddAdapter() method\n   - Keep existing Start/Stop/Events/GetSessions methods\n\n2. internal/terminal/detector_test.go - Tests for detector\n   - Test NewDetector, Start/Stop, GetAdapterStatus, AddAdapter\n   - Use mock adapter for testing\n\n3. internal/adapters/factory.go - Auto-registration (//go:build !darwin)\n   - NewDetectorWithAutoAdapters() - creates detector with tmux adapter\n   - RequestAccessibilityPermission() - returns false\n   - IsAccessibilityEnabled() - returns false\n\n4. internal/adapters/factory_darwin.go - Auto-registration (//go:build darwin)\n   - NewDetectorWithAutoAdapters() - creates detector with tmux + macos adapters\n   - RequestAccessibilityPermission() - calls macos.RequestAccessibilityPermission()\n   - IsAccessibilityEnabled() - calls macos.IsAccessibilityEnabled()\n\nRead spec at docs/tasks/2.7-spec.md for details.",
+  "escalation_from": "L0-Coder (tools executed but file content had escaped newlines)",
+  "existing_files": [
+    "internal/terminal/types.go - TerminalAdapter interface, DetectedTerminal, TerminalEvent",
+    "internal/terminal/detector.go - Current detector (to be modified)",
+    "internal/terminal/macos/adapter.go - macOS adapter (darwin only)",
+    "internal/terminal/tmux/adapter.go - tmux adapter"
+  ]
+}

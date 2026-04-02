@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-03-30T22:13:43.708906+00:00Z",
+  "task_id": "2.1",
+  "tier": "L0-Planner",
+  "attempts": 3,
+  "success": false,
+  "error": "OPENROUTER_API_KEY not set",
+  "ready_for_escalation": true,
+  "context_summary": {
+    "task_id": "2.1",
+    "task_name": "Define terminal adapter interface",
+    "phase": "Phase 2: Terminal Integration",
+    "section_reference": "Week 7-8: tmux Adapter",
+    "implementation_plan_context": "Task 2.1: Define terminal adapter interface\n- Create `internal/terminal/types.go` with `TerminalAdapter` interface (`Capture`, `ListSessions`, etc.).\n- Define `DetectedTerminal` and `TerminalEvent` st",
+    "dependencies": "['1.1', '1.2', '1.3', '1.4', '1.5']",
+    "existing_files": "['go.mod', 'wails.json', '.gitignore', 'scripts/install-deps.sh', '.github/workflows/build.yml']",
+    "prior_learnings": "Tool integration is now functional. LLMs can create files via file_write() calls. Use triple-quote syntax: file_write(\"path\", \"\"\"content\"\"\")"
+  }
+}
