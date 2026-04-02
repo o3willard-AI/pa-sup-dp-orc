@@ -1,0 +1,33 @@
+{
+  "name": "pairadmin",
+  "version": "2.0.0",
+  "description": "AI‑assisted terminal administration",
+  "scripts": {
+    "build": "wails build"
+  },
+  "devDependencies": {
+    "electron": "^latest",
+    "electron-builder": "^latest"
+  },
+  "build": {
+    "appId": "dev.pairadmin.app",
+    "productName": "PairAdmin",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/bin/*",
+      "frontend/dist/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": ["deb", "rpm", "AppImage"],
+      "category": "Development"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
