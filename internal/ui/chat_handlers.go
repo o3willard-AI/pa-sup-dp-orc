@@ -96,9 +96,10 @@ func NewChatHandlers(ctx context.Context, store *session.Store) (*ChatHandlers, 
 		runtime.LogWarning(ctx, fmt.Sprintf("Provider %q not yet implemented, using stub provider", cfg.LLM.Provider))
 		gateway = &stubProvider{name: cfg.LLM.Provider}
 	case "ollama":
-		// TODO: implement Ollama provider
-		runtime.LogWarning(ctx, fmt.Sprintf("Provider %q not yet implemented, using stub provider", cfg.LLM.Provider))
-		gateway = &stubProvider{name: cfg.LLM.Provider}
+		gateway = providers.NewOllamaProvider(
+			cfg.LLM.Ollama.BaseURL,
+			cfg.LLM.Ollama.Model,
+		)
 	default:
 		return nil, fmt.Errorf("unknown provider %q", cfg.LLM.Provider)
 	}

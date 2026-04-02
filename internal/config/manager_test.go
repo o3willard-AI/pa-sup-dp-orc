@@ -15,7 +15,7 @@ func resetViper(t *testing.T) {
 	viper.Reset()
 	globalConfig = nil
 	configPath = ""
-	keychainEnabled = false
+	keychainEnabled.Store(false)
 	globalKeychain = nil
 }
 
@@ -266,8 +266,8 @@ llm:
 
 func TestConfigValidationWithKeychainEnabled(t *testing.T) {
 	// Temporarily enable keychain
-	keychainEnabled = true
-	defer func() { keychainEnabled = false }()
+	keychainEnabled.Store(true)
+	defer func() { keychainEnabled.Store(false) }()
 
 	tests := []struct {
 		name         string
@@ -371,7 +371,7 @@ llm:
 	defer globalKeychain.Delete("test-dummy")
 
 	// Verify keychainEnabled is true
-	if !keychainEnabled {
+	if !keychainEnabled.Load() {
 		t.Error("keychainEnabled should be true after successful keychain init")
 	}
 
@@ -419,7 +419,7 @@ llm:
 	// Keys should be loaded from keychain (if they were stored)
 	// Since we can't guarantee the keychain actually stored them (might be mock),
 	// we'll just ensure validation passes (keychainEnabled true)
-	if !keychainEnabled {
+	if !keychainEnabled.Load() {
 		t.Error("keychainEnabled should still be true")
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 
 	"github.com/spf13/viper"
 )
@@ -48,20 +49,14 @@ type FilterPattern struct {
 	Pattern string `mapstructure:"pattern"`
 }
 
-// KeychainConfig extends Config with keychain integration.
-type KeychainConfig struct {
-	*Config
-	keychain *Keychain
-}
-
 func (c *Config) validate() error {
 	switch c.LLM.Provider {
 	case "openai":
-		if c.LLM.OpenAI.APIKey == "" && !keychainEnabled {
+		if c.LLM.OpenAI.APIKey == "" && !keychainEnabled.Load() {
 			return errors.New("openai provider requires api_key (config: llm.openai.api_key, env: PAIRADMIN_LLM_OPENAI_API_KEY)")
 		}
 	case "anthropic":
-		if c.LLM.Anthropic.APIKey == "" && !keychainEnabled {
+		if c.LLM.Anthropic.APIKey == "" && !keychainEnabled.Load() {
 			return errors.New("anthropic provider requires api_key (config: llm.anthropic.api_key, env: PAIRADMIN_LLM_ANTHROPIC_API_KEY)")
 		}
 	case "ollama":
@@ -88,7 +83,7 @@ var (
 	globalConfig    *Config
 	configPath      string
 	configMu        sync.RWMutex
-	keychainEnabled bool
+	keychainEnabled atomic.Bool
 	globalKeychain  *Keychain
 )
 
@@ -150,11 +145,11 @@ func Init(configFile string) error {
 // InitWithKeychain initializes configuration with OS keychain support.
 func InitWithKeychain(configFile, keychainService string) error {
 	// Enable keychain before validation so empty API keys are allowed
-	keychainEnabled = true
+	keychainEnabled.Store(true)
 	defer func() {
 		// If keychain fails, disable keychain mode
 		if globalKeychain == nil {
-			keychainEnabled = false
+			keychainEnabled.Store(false)
 		}
 	}()
 
@@ -203,21 +198,36 @@ func SaveSecrets() error {
 	}
 
 	// Store OpenAI key
+	var openaiErr error
 	if globalConfig.LLM.OpenAI.APIKey != "" {
-		if err := globalKeychain.Set("openai_api_key", globalConfig.LLM.OpenAI.APIKey); err != nil {
-			configMu.Unlock()
-			return fmt.Errorf("save OpenAI key: %w", err)
-		}
-		globalConfig.LLM.OpenAI.APIKey = "" // Clear from plain config
+		openaiErr = globalKeychain.Set("openai_api_key", globalConfig.LLM.OpenAI.APIKey)
 	}
 
 	// Store Anthropic key
+	var anthropicErr error
 	if globalConfig.LLM.Anthropic.APIKey != "" {
-		if err := globalKeychain.Set("anthropic_api_key", globalConfig.LLM.Anthropic.APIKey); err != nil {
-			configMu.Unlock()
-			return fmt.Errorf("save Anthropic key: %w", err)
+		anthropicErr = globalKeychain.Set("anthropic_api_key", globalConfig.LLM.Anthropic.APIKey)
+	}
+
+	// If any store failed, return error without clearing config
+	if openaiErr != nil || anthropicErr != nil {
+		configMu.Unlock()
+		// Construct combined error
+		if openaiErr != nil && anthropicErr != nil {
+			return fmt.Errorf("save OpenAI key: %w; save Anthropic key: %w", openaiErr, anthropicErr)
 		}
-		globalConfig.LLM.Anthropic.APIKey = "" // Clear from plain config
+		if openaiErr != nil {
+			return fmt.Errorf("save OpenAI key: %w", openaiErr)
+		}
+		return fmt.Errorf("save Anthropic key: %w", anthropicErr)
+	}
+
+	// Both succeeded, clear from config
+	if globalConfig.LLM.OpenAI.APIKey != "" {
+		globalConfig.LLM.OpenAI.APIKey = ""
+	}
+	if globalConfig.LLM.Anthropic.APIKey != "" {
+		globalConfig.LLM.Anthropic.APIKey = ""
 	}
 
 	configMu.Unlock()

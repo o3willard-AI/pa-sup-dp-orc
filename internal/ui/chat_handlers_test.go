@@ -40,12 +40,12 @@ func (m *mockGateway) StreamComplete(ctx context.Context, req llm.CompletionRequ
 }
 
 type mockStore struct {
-	addSessionFunc         func(sessionID, terminalID string) error
-	getSessionFunc         func(sessionID string) (*session.Session, error)
-	addCommandFunc         func(cmd session.SuggestedCommand) error
-	getCommandByIDFunc     func(commandID string) (*session.SuggestedCommand, error)
+	addSessionFunc            func(sessionID, terminalID string) error
+	getSessionFunc            func(sessionID string) (*session.Session, error)
+	addCommandFunc            func(cmd session.SuggestedCommand) error
+	getCommandByIDFunc        func(commandID string) (*session.SuggestedCommand, error)
 	getCommandsByTerminalFunc func(terminalID string) ([]session.SuggestedCommand, error)
-	incrementUsedCountFunc func(commandID string) error
+	incrementUsedCountFunc    func(commandID string) error
 }
 
 func (m *mockStore) AddSession(sessionID, terminalID string) error {

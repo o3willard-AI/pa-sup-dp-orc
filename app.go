@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pairadmin/pairadmin/internal/audit"
 	"github.com/pairadmin/pairadmin/internal/config"
 	"github.com/pairadmin/pairadmin/internal/hotkeys"
 	"github.com/pairadmin/pairadmin/internal/session"
@@ -27,6 +28,7 @@ type App struct {
 	terminalHandlers *ui.TerminalHandlers
 	chatHandlers     *ui.ChatHandlers
 	hotkeyManager    *hotkeys.Manager
+	auditLogger      *audit.Logger
 }
 
 // NewApp creates a new App application struct
@@ -48,6 +50,14 @@ func (a *App) startup(ctx context.Context) {
 	if err := config.InitWithKeychain(a.configPath, "pairadmin"); err != nil {
 		runtime.LogError(ctx, fmt.Sprintf("failed to init config with keychain: %v", err))
 		panic(fmt.Sprintf("failed to initialize configuration with keychain: %v", err))
+	}
+
+	// Initialize audit logger
+	auditLogger, err := audit.NewLogger()
+	if err != nil {
+		runtime.LogError(ctx, fmt.Sprintf("failed to init audit logger: %v", err))
+	} else {
+		a.auditLogger = auditLogger
 	}
 
 	// Initialize hotkey manager
@@ -122,4 +132,11 @@ func (a *App) CopyCommandToClipboard(commandID, terminalID string) error {
 		return fmt.Errorf("chat handlers not initialized")
 	}
 	return a.chatHandlers.CopyCommandToClipboard(commandID, terminalID)
+}
+
+// shutdown is called when the app is shutting down.
+func (a *App) shutdown(ctx context.Context) {
+	if a.auditLogger != nil {
+		a.auditLogger.Close()
+	}
 }

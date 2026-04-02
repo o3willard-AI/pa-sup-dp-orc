@@ -1,6 +1,7 @@
 package hotkeys
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -56,5 +57,65 @@ func TestManager_Register(t *testing.T) {
 	m.registered["Ctrl+Shift+P"]()
 	if !called {
 		t.Error("Stored callback did not update called flag")
+	}
+}
+
+func TestManager_StartStop(t *testing.T) {
+	m := NewManager()
+	if err := m.Start(); err != nil {
+		t.Errorf("Start returned error: %v", err)
+	}
+	m.Stop()
+	// Should not panic
+}
+
+func TestManager_RegisterInvalidHotkey(t *testing.T) {
+	m := NewManager()
+	err := m.Register("Invalid", nil)
+	if err == nil {
+		t.Error("Register with invalid hotkey should return error")
+	}
+}
+
+func TestManager_RegisterDuplicate(t *testing.T) {
+	m := NewManager()
+	callCount := 0
+	callback1 := func() { callCount += 1 }
+	callback2 := func() { callCount += 2 }
+
+	err := m.Register("Ctrl+A", callback1)
+	if err != nil {
+		t.Fatalf("First register failed: %v", err)
+	}
+	err = m.Register("Ctrl+A", callback2)
+	if err != nil {
+		t.Fatalf("Second register failed: %v", err)
+	}
+	// Invoke the stored callback (should be callback2)
+	m.registered["Ctrl+A"]()
+	if callCount != 2 {
+		t.Errorf("Expected callCount 2, got %d", callCount)
+	}
+}
+
+func TestManager_ConcurrentRegister(t *testing.T) {
+	m := NewManager()
+	const goroutines = 10
+	errCh := make(chan error, goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func(idx int) {
+			hotkey := fmt.Sprintf("Ctrl+%d", idx)
+			err := m.Register(hotkey, func() {})
+			if err != nil {
+				errCh <- fmt.Errorf("Register failed for %s: %v", hotkey, err)
+			} else {
+				errCh <- nil
+			}
+		}(i)
+	}
+	for i := 0; i < goroutines; i++ {
+		if err := <-errCh; err != nil {
+			t.Error(err)
+		}
 	}
 }
