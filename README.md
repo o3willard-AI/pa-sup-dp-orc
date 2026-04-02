@@ -23,3 +23,20 @@ To build a redistributable, production mode package, use `wails build`.
 - **Sensitive Data Filtering**: Redacts passwords, API keys, etc. before sending to LLM
 - **Settings Dialog**: Configure providers, terminals, hotkeys, and appearance
 - **Hotkey Support**: Global shortcuts for copying last command and focusing the app
+
+## Testing
+
+### Unit Tests
+```bash
+go test ./internal/... -short
+```
+
+### Integration Tests
+```bash
+./scripts/test-integration.sh
+```
+
+### End‑to‑End Tests
+```bash
+./scripts/test-e2e.sh
+```
