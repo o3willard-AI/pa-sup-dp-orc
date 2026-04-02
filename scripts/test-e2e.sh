@@ -3,6 +3,14 @@ set -e
 
 export PATH="$HOME/go/bin:$PATH"
 
+# Check required commands
+for cmd in wails go; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Error: $cmd not found in PATH"
+        exit 1
+    fi
+done
+
 echo "=== PairAdmin End‑to‑End Test ==="
 echo "This script verifies the complete workflow from config to AI response."
 
@@ -13,6 +21,7 @@ wails build -nocolour
 # 2. Create test configuration
 echo "Creating test environment..."
 TEST_DIR=$(mktemp -d)
+trap 'rm -rf "$TEST_DIR"' EXIT
 export XDG_CONFIG_HOME="$TEST_DIR"
 mkdir -p "$TEST_DIR/pairadmin"
 
