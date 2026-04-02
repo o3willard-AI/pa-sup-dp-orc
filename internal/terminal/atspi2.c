@@ -1,3 +1,5 @@
+//go:build linux
+
 /* AT-SPI2 stub implementation for Linux terminal accessibility
  * Full implementation requires proper D-Bus and AT-SPI2 integration.
  * This stub provides the interface structure for future implementation.
