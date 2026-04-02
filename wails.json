@@ -1,0 +1,30 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "PairAdmin",
+  "outputfilename": "pairadmin",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "PairAdmin Team",
+    "email": "team@pairadmin.dev"
+  },
+  "info": {
+    "companyName": "PairAdmin",
+    "productName": "PairAdmin",
+    "productVersion": "2.0.0",
+    "copyright": "Copyright © 2026 PairAdmin",
+    "comments": "AI‑assisted terminal administration"
+  },
+  "deb": {
+    "depends": ["libgtk-3-0", "libwebkit2gtk-4.0-37"]
+  },
+  "nsis": {
+    "installDirectory": "$PROGRAMFILES\\PairAdmin"
+  },
+  "mac": {
+    "bundle": "dev.pairadmin.app",
+    "category": "public.app-category.developer-tools"
+  }
+}
