@@ -40,3 +40,8 @@ go test ./internal/... -short
 ```bash
 ./scripts/test-e2e.sh
 ```
+
+## Documentation
+
+- [User Guide](docs/user-guide.md)
+- [Installation Guide](docs/installation.md)
