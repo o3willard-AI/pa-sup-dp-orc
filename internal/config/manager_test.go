@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-
-
 func resetViper(t *testing.T) {
 	t.Helper()
 	viper.Reset()

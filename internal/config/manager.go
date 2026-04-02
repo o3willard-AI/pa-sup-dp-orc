@@ -48,6 +48,12 @@ type FilterPattern struct {
 	Pattern string `mapstructure:"pattern"`
 }
 
+// KeychainConfig extends Config with keychain integration.
+type KeychainConfig struct {
+	*Config
+	keychain *Keychain
+}
+
 func (c *Config) validate() error {
 	switch c.LLM.Provider {
 	case "openai":
@@ -79,11 +85,11 @@ func (c *Config) validate() error {
 }
 
 var (
-	globalConfig *Config
-	configPath   string
-	configMu     sync.RWMutex
+	globalConfig    *Config
+	configPath      string
+	configMu        sync.RWMutex
 	keychainEnabled bool
-	globalKeychain *Keychain
+	globalKeychain  *Keychain
 )
 
 // Init loads configuration from file and environment variables.
