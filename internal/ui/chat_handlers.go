@@ -129,7 +129,10 @@ func (c *ChatHandlers) SendMessage(terminalID, message string) (string, string, 
 		Temperature: 0.7,
 	}
 
-	resp, err := c.gateway.Complete(c.ctx, req)
+	ctx, cancel := context.WithTimeout(c.ctx, 30*time.Second)
+	defer cancel()
+
+	resp, err := c.gateway.Complete(ctx, req)
 	if err != nil {
 		return "", "", fmt.Errorf("LLM completion: %w", err)
 	}
