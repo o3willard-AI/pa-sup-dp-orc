@@ -42,7 +42,7 @@ func (k *Keychain) Get(key string) (string, error) {
 	item, err := k.ring.Get(key)
 	if err != nil {
 		if errors.Is(err, keyring.ErrKeyNotFound) {
-			return "", fmt.Errorf("key %q not found in keychain", key)
+			return "", fmt.Errorf("key %q not found in keychain: %w", key, err)
 		}
 		return "", fmt.Errorf("get from keyring: %w", err)
 	}
@@ -52,6 +52,9 @@ func (k *Keychain) Get(key string) (string, error) {
 // Delete removes a secret from the keychain.
 func (k *Keychain) Delete(key string) error {
 	if err := k.ring.Remove(key); err != nil {
+		if errors.Is(err, keyring.ErrKeyNotFound) {
+			return nil
+		}
 		return fmt.Errorf("delete from keyring: %w", err)
 	}
 	return nil
