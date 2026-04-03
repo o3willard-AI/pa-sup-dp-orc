@@ -1,5 +1,0 @@
-{
-  "task_spec": "See docs/tasks/2.2-spec.md",
-  "existing_context": "Task 2.1 complete: internal/terminal/types.go has TerminalAdapter interface, DetectedTerminal struct, TerminalEvent struct. Follow Go patterns from Task 2.1.",
-  "implementation_notes": "Create internal/terminal/tmux/ directory. Use exec.Command for tmux CLI. Implement all TerminalAdapter interface methods. Add unit tests."
-}

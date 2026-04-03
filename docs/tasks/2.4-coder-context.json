@@ -1,5 +1,0 @@
-{
-  "task_spec": "See docs/tasks/2.4-spec.md",
-  "existing_context": "Tasks 2.1-2.3 complete: terminal/types.go has TerminalAdapter interface and TerminalEvent struct, terminal/tmux/adapter.go implements tmux adapter, terminal/detector.go provides session detection with event emission. Wails framework in use for UI.",
-  "implementation_notes": "Create internal/ui/terminal_handlers.go with Wails event emission for terminal updates. Use wails.Events.Emit() for real-time updates to frontend. Integrate with Detector from Task 2.3. Create frontend event listeners for terminal events."
-}
