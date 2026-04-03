@@ -1,47 +1,41 @@
-# README
+# PairAdmin
 
-## About
+**AI‑assisted terminal administration**
 
-This is the official Wails Svelte template.
+PairAdmin enables **“Pair Administration”**—a collaboration model where human system administrators work alongside AI agents to manage Linux, Unix, macOS, and Windows systems via terminal interfaces.
 
-## Live Development
-
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
-
-## Building
-
-To build a redistributable, production mode package, use `wails build`.
-
-## Phase 3: AI Collaboration Features
-
-- **LLM Provider Integration**: Support for OpenAI, Anthropic, and Ollama (local)
-- **Command History**: Stores AI‑suggested commands per terminal session in SQLite
-- **Clipboard Manager**: One‑click copy to clipboard with optional terminal focus
-- **Sensitive Data Filtering**: Redacts passwords, API keys, etc. before sending to LLM
-- **Settings Dialog**: Configure providers, terminals, hotkeys, and appearance
-- **Hotkey Support**: Global shortcuts for copying last command and focusing the app
-
-## Testing
-
-### Unit Tests
-```bash
-go test ./internal/... -short
-```
-
-### Integration Tests
-```bash
-./scripts/test-integration.sh
-```
-
-### End‑to‑End Tests
-```bash
-./scripts/test-e2e.sh
-```
-
-## Documentation
+## Quick Links
 
 - [User Guide](docs/user-guide.md)
 - [Installation Guide](docs/installation.md)
+- [Product Requirements (PRD)](docs/planning/PairAdmin_PRD_v2.0.md)
+- [Project History & Maintenance Guide](PROJECT_HISTORY_AND_MAINTENANCE.md) – **single source of truth for maintainers**
+
+## Building
+
+```bash
+# Install dependencies
+./scripts/install-deps.sh
+
+# Development (hot‑reload)
+wails dev
+
+# Production build
+wails build
+```
+
+## Testing
+
+```bash
+go test ./internal/... -short          # Unit tests
+./scripts/test-integration.sh          # Integration tests
+./scripts/test-e2e.sh                  # End‑to‑end tests
+```
+
+## License
+
+MIT – see [LICENSE](LICENSE) file.
+
+---
+
+*For detailed architecture, release history, CI/CD, and maintenance instructions, refer to [`PROJECT_HISTORY_AND_MAINTENANCE.md`](PROJECT_HISTORY_AND_MAINTENANCE.md).*
